@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Wave Scope</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0e1117; --card:#161b24; --card2:#1c2330; --line:#252d3a;
+  --fg:#e6edf3; --dim:#8b97a8; --accent:#4ea1ff; --accent2:#7ee0c0;
+  --good:#3fb950; --warn:#d29922; --bad:#f85149;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+[hidden]{display:none !important}
+#app{max-width:600px;margin:0 auto;padding:0 12px 48px}
+header{
+  position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bg) 72%,rgba(14,17,23,0));
+  padding:14px 0 8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+}
+h1{font-size:19px;margin:0;letter-spacing:.2px;font-weight:650}
+h1 span{color:var(--accent)}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--line);
+  color:var(--dim);border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap;
+}
+.chip b{color:var(--fg);font-weight:650}
+nav{
+  position:sticky;top:52px;z-index:19;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  background:var(--bg);padding:4px 0 10px;
+}
+nav button{
+  background:var(--card);border:1px solid var(--line);color:var(--dim);
+  padding:9px 4px;border-radius:10px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+}
+nav button.active{background:var(--accent);border-color:var(--accent);color:#08131f}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:0 0 12px}
+.card.tight{padding:11px 12px}
+.card h2{font-size:14px;margin:0 0 10px;letter-spacing:.4px;text-transform:uppercase;color:var(--dim);font-weight:650}
+.card h3{font-size:16px;margin:0;font-weight:650}
+.row{display:flex;align-items:center;gap:8px}
+.row.wrap{flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.dim{color:var(--dim)}
+.small{font-size:12.5px}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+button.btn{
+  background:var(--card2);border:1px solid var(--line);color:var(--fg);border-radius:10px;
+  padding:10px 13px;font:inherit;font-weight:600;cursor:pointer;
+}
+button.btn:active{transform:translateY(1px)}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:#08131f}
+button.btn.ghost{background:transparent}
+button.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
+button.btn:disabled{opacity:.45}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+input,select,textarea{
+  background:#0b0f16;border:1px solid var(--line);color:var(--fg);border-radius:10px;
+  padding:10px;font:inherit;width:100%;
+}
+input[type=number]{font-variant-numeric:tabular-nums}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.4;min-height:260px}
+label.f{display:block;margin:0 0 10px}
+label.f>span{display:block;font-size:12px;color:var(--dim);margin:0 0 4px;font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{
+  flex:1;min-width:56px;background:var(--card2);border:1px solid var(--line);color:var(--dim);
+  border-radius:10px;padding:9px 6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#08131f}
+.ex{border:1px solid var(--line);border-radius:12px;margin:0 0 10px;overflow:hidden;background:var(--card2)}
+.ex>.head{display:flex;align-items:center;gap:8px;padding:11px 12px;background:#1a2130}
+.ex>.head .tag{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--accent2);text-transform:uppercase}
+.sets{padding:4px 0 6px}
+.set{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:7px 12px}
+.set+.set{border-top:1px dashed rgba(255,255,255,.06)}
+.set .idx{width:22px;height:22px;border-radius:7px;background:#0b0f16;border:1px solid var(--line);
+  display:grid;place-items:center;font-size:11px;color:var(--dim);font-weight:700}
+.set.warm .idx{opacity:.6}
+.set.warm{opacity:.72}
+.set .w{font-size:17px;font-weight:680;letter-spacing:.2px}
+.set .w small{font-size:12px;color:var(--dim);font-weight:600;margin-left:3px}
+.set .r{font-size:13px;color:var(--dim);font-weight:600;white-space:nowrap}
+.set .plates{grid-column:2/4;font-size:11.5px;color:var(--dim);margin-top:-4px}
+.badge{font-size:10.5px;font-weight:750;letter-spacing:.4px;padding:2px 6px;border-radius:6px;
+  background:rgba(78,161,255,.14);color:var(--accent);border:1px solid rgba(78,161,255,.3)}
+.badge.amrap{background:rgba(126,224,192,.13);color:var(--accent2);border-color:rgba(126,224,192,.3)}
+.badge.joker{background:rgba(210,153,34,.13);color:var(--warn);border-color:rgba(210,153,34,.32)}
+.set.joker{opacity:.85;border-top:1px dashed rgba(210,153,34,.35) !important}
+.why{padding:8px 12px 11px;font-size:11.5px;color:var(--dim);border-top:1px solid var(--line);background:#151b26}
+.note{border-left:3px solid var(--accent);background:rgba(78,161,255,.07);padding:9px 11px;border-radius:0 10px 10px 0;font-size:13px;margin:0 0 12px}
+.note.warn{border-color:var(--warn);background:rgba(210,153,34,.08)}
+.note.bad{border-color:var(--bad);background:rgba(248,81,73,.08)}
+.note.good{border-color:var(--good);background:rgba(63,185,80,.08)}
+.slider{display:flex;align-items:center;gap:10px}
+.slider input[type=range]{flex:1;accent-color:var(--accent);height:30px}
+.slider .val{width:58px;text-align:right;font-weight:680;font-variant-numeric:tabular-nums}
+.meter{height:7px;border-radius:99px;background:#0b0f16;border:1px solid var(--line);overflow:hidden}
+.meter>i{display:block;height:100%;background:linear-gradient(90deg,var(--bad),var(--warn),var(--good))}
+.goal{padding:9px 0}
+.goal+.goal{border-top:1px solid var(--line)}
+.goal .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px}
+.goal .nm{font-weight:650;font-size:14px}
+.goal .num{font-variant-numeric:tabular-nums;font-size:13px;color:var(--dim)}
+.goal .num b{color:var(--fg);font-size:15px}
+.goal .bar{height:6px;border-radius:99px;background:#0b0f16;border:1px solid var(--line);overflow:hidden;position:relative}
+.goal .bar i{display:block;height:100%;background:var(--accent)}
+.goal .bar u{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--accent2);opacity:.8}
+.goal .sub{font-size:11px;color:var(--dim);margin-top:4px}
+table.hist{width:100%;border-collapse:collapse;font-size:13px}
+table.hist td,table.hist th{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left}
+table.hist th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--dim)}
+.status{font-size:12.5px;padding:8px 10px;border-radius:9px;background:#0b0f16;border:1px solid var(--line);word-break:break-word}
+.status.ok{border-color:rgba(63,185,80,.4);color:var(--good)}
+.status.err{border-color:rgba(248,81,73,.4);color:var(--bad)}
+.status.busy{border-color:rgba(210,153,34,.4);color:var(--warn)}
+.maplist{display:flex;flex-direction:column;gap:8px}
+.maprow{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 10px;background:var(--card2);border:1px solid var(--line);border-radius:10px}
+.maprow .nm{font-weight:620;font-size:13.5px}
+.maprow .id{font-size:11px;color:var(--dim);font-family:ui-monospace,monospace}
+.ok-dot{width:8px;height:8px;border-radius:99px;background:var(--good);display:inline-block}
+.no-dot{width:8px;height:8px;border-radius:99px;background:var(--bad);display:inline-block}
+dialog{
+  background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:16px;
+  padding:14px;max-width:520px;width:calc(100% - 24px);
+}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+footer{color:var(--dim);font-size:11.5px;text-align:center;padding:18px 0 6px;line-height:1.6}
+.logrow{display:grid;grid-template-columns:1fr 78px 68px 62px;gap:7px;align-items:center;margin:0 0 8px}
+.logrow .lbl{font-size:13px;font-weight:620;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.logrow input{padding:8px 7px;text-align:center;font-size:14px}
+.logrow .hd{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;text-align:center;font-weight:700}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Wave<span>Scope</span></h1>
+    <span class="chip" id="chipCycle">—</span>
+    <span class="chip" id="chipDay">—</span>
+    <button class="chip" id="installBtn" hidden style="cursor:pointer;border-color:var(--accent);color:var(--accent)">⤓ Install</button>
+  </header>
+
+  <nav>
+    <button data-tab="today" class="active">Today</button>
+    <button data-tab="log">Log</button>
+    <button data-tab="program">Program</button>
+    <button data-tab="sync">Sync</button>
+  </nav>
+
+  <main>
+    <!-- ============ TODAY ============ -->
+    <section id="tab-today">
+      <div id="todayAlerts"></div>
+
+      <div class="card tight" id="consistCard">
+        <div class="row between" style="margin-bottom:7px">
+          <span class="small dim" style="text-transform:uppercase;letter-spacing:.4px;font-weight:650">Consistency</span>
+          <span class="small mono" id="consistCount">—</span>
+        </div>
+        <div class="meter"><i id="consistBar" style="width:0%"></i></div>
+        <div class="small dim" style="margin-top:6px" id="consistNote">—</div>
+      </div>
+
+      <div class="card" id="goalCard" hidden>
+        <h2>Goals</h2>
+        <div id="goalRows"></div>
+      </div>
+
+      <div class="card tight">
+        <div class="row between wrap" style="gap:10px">
+          <div class="seg grow" id="daySeg"></div>
+          <div class="row" style="gap:6px">
+            <span class="chip" id="chipMins">—</span>
+            <button class="btn sm" id="weekDown">−</button>
+            <span class="chip"><b id="weekLabel">W1</b></span>
+            <button class="btn sm" id="weekUp">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Readiness</h2>
+        <div class="slider"><span class="small dim" style="width:64px">Sleep</span>
+          <input type="range" id="rSleep" min="3" max="10" step="0.5"><span class="val" id="rSleepV">7h</span></div>
+        <div class="slider"><span class="small dim" style="width:64px">Soreness</span>
+          <input type="range" id="rSore" min="1" max="5" step="1"><span class="val" id="rSoreV">2</span></div>
+        <div class="slider"><span class="small dim" style="width:64px">Energy</span>
+          <input type="range" id="rEnergy" min="1" max="5" step="1"><span class="val" id="rEnergyV">3</span></div>
+        <div class="meter" style="margin:10px 0 6px"><i id="rBar" style="width:60%"></i></div>
+        <div class="row between small"><span class="dim" id="rText">—</span><span class="mono" id="rMult">×1.00</span></div>
+      </div>
+
+      <div id="prescription"></div>
+
+      <div class="btnrow" style="margin:14px 0 4px">
+        <button class="btn primary grow" id="pushHevy">Push to Hevy</button>
+        <button class="btn" id="copyPlan">Copy</button>
+      </div>
+    </section>
+
+    <!-- ============ LOG ============ -->
+    <section id="tab-log" hidden>
+      <div class="card">
+        <h2>Log this session</h2>
+        <div class="small dim" style="margin:-4px 0 12px">Top set is what drives progression. Reps = what you actually got; RPE optional but it sharpens the next call.</div>
+        <div id="logForm"></div>
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn primary grow" id="saveSession">Save session</button>
+          <button class="btn" id="pullHevy">Pull from Hevy</button>
+        </div>
+        <div id="logStatus" class="status" style="margin-top:10px" hidden></div>
+      </div>
+
+      <div class="card">
+        <h2>History</h2>
+        <div id="historyBox"></div>
+        <div class="btnrow" style="margin-top:10px">
+          <button class="btn sm" id="importCsv">Import Hevy CSV</button>
+          <button class="btn sm ghost" id="clearHist">Clear history</button>
+        </div>
+        <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+      </div>
+    </section>
+
+    <!-- ============ PROGRAM ============ -->
+    <section id="tab-program" hidden>
+      <div class="card">
+        <h2>Training maxes</h2>
+        <div id="tmEditor"></div>
+        <div class="small dim" style="margin-top:8px">TM is the number every percentage is taken from — normally about 90% of a true max.</div>
+      </div>
+
+      <div class="card">
+        <h2>Training block</h2>
+        <div class="seg" id="blockSeg">
+          <button data-block="capacity">Capacity</button>
+          <button data-block="peak">Peaking</button>
+        </div>
+        <div class="small dim" id="blockNote" style="margin-top:9px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Main lifts</h2>
+        <div class="small dim" style="margin:-4px 0 10px">Main lifts run on percentages of a training max and progress off the AMRAP set. Everything else is accessory work on double progression.</div>
+        <div id="mainPicker"></div>
+      </div>
+
+      <div class="card">
+        <h2>Settings</h2>
+        <div class="grid2">
+          <label class="f"><span>Units</span>
+            <select id="setUnits"><option value="lb">lb</option><option value="kg">kg</option></select></label>
+          <label class="f"><span>Round to</span><input type="number" id="setRound" step="0.5"></label>
+          <label class="f"><span>Bar weight</span><input type="number" id="setBar" step="0.5"></label>
+          <label class="f"><span>TM update</span>
+            <select id="setTmMode">
+              <option value="cycle">End of cycle</option>
+              <option value="session">Every session</option>
+              <option value="manual">Manual only</option>
+            </select></label>
+        </div>
+        <label class="f"><span>Plates available (per side, comma separated)</span><input id="setPlates"></label>
+        <div class="row between wrap" style="gap:8px;margin:2px 0 12px">
+          <div class="grow small dim" id="installNote">—</div>
+          <button class="btn sm" id="installBtn2">Install app</button>
+        </div>
+        <label class="row" style="gap:10px;align-items:flex-start;margin-bottom:8px">
+          <input type="checkbox" id="setRamp" style="width:auto;margin-top:2px">
+          <span class="grow small">First-cycle on-ramp — one fewer supplemental set during cycle 1 only.</span>
+        </label>
+        <label class="row" style="gap:10px;align-items:flex-start">
+          <input type="checkbox" id="setJokers" style="width:auto;margin-top:2px">
+          <span class="grow small">Offer a joker set — one optional set 5% above the top set, for days the AMRAP flies. Doesn't affect progression.</span>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Program (JSON)</h2>
+        <div class="small dim" style="margin:-4px 0 10px">Free-form. Edit anything: days, exercises, wave percentages, rep schemes.</div>
+        <textarea id="progJson" spellcheck="false"></textarea>
+        <div class="btnrow" style="margin-top:10px">
+          <button class="btn primary" id="saveProg">Save program</button>
+          <button class="btn sm" id="resetProg">Reset to my program</button>
+          <button class="btn sm" id="schemaHelp">Schema</button>
+        </div>
+        <div id="progStatus" class="status" style="margin-top:10px" hidden></div>
+      </div>
+    </section>
+
+    <!-- ============ SYNC ============ -->
+    <section id="tab-sync" hidden>
+      <div class="card">
+        <h2>Hevy connection</h2>
+        <label class="f"><span>API key</span><input type="password" id="apiKey" placeholder="paste key from Hevy → Settings → Developer" autocomplete="off"></label>
+        <label class="f"><span>API base (change only if you run a proxy)</span><input id="apiBase" placeholder="https://api.hevyapp.com"></label>
+        <div class="btnrow">
+          <button class="btn primary" id="testConn">Test connection</button>
+          <button class="btn sm" id="loadTemplates">Refresh exercise list</button>
+        </div>
+        <div id="connStatus" class="status" style="margin-top:10px" hidden></div>
+        <div class="small dim" style="margin-top:10px">API keys are a Hevy Pro feature. Without one, everything except push/pull still works — log by hand or import a CSV export.</div>
+        <div class="btnrow" style="margin-top:10px"><button class="btn sm ghost" id="proxyHelp">Blocked by CORS? Proxy setup</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Import from Hevy</h2>
+        <div class="small dim" style="margin:-4px 0 10px">Pulls your routines, your whole logged history and the exercise catalogue, then builds the program from what's actually there: days from your routines, training maxes from your recent e1RMs, every exercise pre-mapped.</div>
+        <div class="btnrow">
+          <button class="btn primary" id="importHevy">Import everything</button>
+          <button class="btn sm" id="importHistoryOnly">History only</button>
+        </div>
+        <div id="importStatus" class="status" style="margin-top:10px" hidden></div>
+        <div class="small dim" style="margin-top:10px">Re-running this later only fetches sessions newer than what you already have.</div>
+      </div>
+
+      <div class="card">
+        <h2>Exercise mapping</h2>
+        <div class="small dim" style="margin:-4px 0 10px">Each exercise in your program has to point at a Hevy exercise before it can be pushed.</div>
+        <div id="mapList" class="maplist"></div>
+      </div>
+
+      <div class="card">
+        <h2>Backup</h2>
+        <div class="btnrow">
+          <button class="btn sm" id="exportState">Export all data</button>
+          <button class="btn sm" id="importState">Import data</button>
+        </div>
+        <input type="file" id="stateFile" accept=".json,application/json" hidden>
+        <div class="small dim" style="margin-top:10px">Everything lives in this browser only. Export before clearing site data or switching phones.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Wave Scope · all numbers are suggestions, not orders</footer>
+</div>
+
+<dialog id="pickDlg">
+  <div class="row between" style="margin-bottom:10px"><h3 style="margin:0;font-size:15px">Pick Hevy exercise</h3>
+    <button class="btn sm ghost" id="pickClose">Close</button></div>
+  <input id="pickSearch" placeholder="Search…" autocomplete="off">
+  <div id="pickResults" style="max-height:50vh;overflow:auto;margin-top:10px"></div>
+</dialog>
+
+<dialog id="helpDlg">
+  <div class="row between" style="margin-bottom:10px"><h3 style="margin:0;font-size:15px">Program schema</h3>
+    <button class="btn sm ghost" id="helpClose">Close</button></div>
+  <div id="helpBody" class="small" style="max-height:60vh;overflow:auto"></div>
+</dialog>
+
+<script>
+'use strict';
+/* ============================================================
+   Wave Scope — state + coaching engine
+   ============================================================ */
+const LB_PER_KG = 2.20462262;
+const STORE_KEY = 'waveScope.v1';
+const $  = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const today = () => new Date().toISOString().slice(0, 10);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- default program ---------- */
+function defaultProgram() {
+  return {
+    name: "5/3/1 · Full-body A/B",
+    cycleSteps: 4,
+    rotation: ["A", "B"],
+    warmups: [{ pct: 0.40, reps: 5 }, { pct: 0.50, reps: 5 }, { pct: 0.60, reps: 3 }],
+    schemes: {
+      "531": {
+        label: "5/3/1 main",
+        weeks: [
+          { label: "5s",     targetRpe: 8,   sets: [{ pct: .65, reps: 5 }, { pct: .75, reps: 5 }, { pct: .85, reps: 5, amrap: true }] },
+          { label: "3s",     targetRpe: 8.5, sets: [{ pct: .70, reps: 3 }, { pct: .80, reps: 3 }, { pct: .90, reps: 3, amrap: true }] },
+          { label: "5/3/1",  targetRpe: 9,   sets: [{ pct: .75, reps: 5 }, { pct: .85, reps: 3 }, { pct: .95, reps: 1, amrap: true }] },
+          { label: "Deload", targetRpe: 6, deload: true, sets: [{ pct: .40, reps: 5 }, { pct: .50, reps: 5 }, { pct: .60, reps: 5 }] }
+        ]
+      },
+      "fsl": {
+        label: "First set last",
+        weeks: [
+          { targetRpe: 8, sets: [{ pct: .65, reps: 5, count: 5 }] },
+          { targetRpe: 8, sets: [{ pct: .70, reps: 5, count: 5 }] },
+          { targetRpe: 8, sets: [{ pct: .75, reps: 5, count: 3 }] },
+          { targetRpe: 6, deload: true, sets: [{ pct: .40, reps: 5, count: 3 }] }
+        ]
+      }
+    },
+    days: [
+      {
+        id: "A", name: "Day A", exercises: [
+          { name: "Squat (Barbell)", mode: "main", scheme: "531", tm: 275, increment: 10 },
+          { name: "Bench Press (Barbell)", mode: "main", scheme: "531", tm: 185, increment: 5 },
+          { name: "Bent Over Row (Barbell)", mode: "accessory", sets: 3, reps: "8-12", weight: 135, increment: 5 },
+          { name: "Bicep Curl (Dumbbell)", mode: "accessory", sets: 3, reps: "10-15", weight: 30, increment: 5 }
+        ]
+      },
+      {
+        id: "B", name: "Day B", exercises: [
+          { name: "Deadlift (Barbell)", label: "Sumo Deadlift", mode: "main", scheme: "531", tm: 315, increment: 10 },
+          { name: "Bench Press (Barbell)", mode: "supplemental", scheme: "fsl", tmFrom: "Bench Press (Barbell)" },
+          { name: "Pull Up", mode: "accessory", sets: 3, reps: "AMRAP", bodyweight: true },
+          { name: "Hanging Knee Raise", mode: "accessory", sets: 3, reps: "10-15", bodyweight: true }
+        ]
+      }
+    ]
+  };
+}
+
+/* ---- baseline built from Joseph's Hevy export (Jan 2024 – Sep 2026) ---- */
+const SEED = {"program":{"name":"300/400/500 \u2014 capacity block","cycleSteps":4,"rotation":["A","B"],"goals":{"Squat (Barbell)":400,"Bench Press (Barbell)":300,"Sumo Deadlift":500},"warmups":[{"pct":0.4,"reps":5},{"pct":0.5,"reps":5},{"pct":0.6,"reps":3},{"pct":0.7,"reps":2},{"pct":0.8,"reps":1}],"schemes":{"531":{"label":"5/3/1","weeks":[{"label":"5s","targetRpe":8,"sets":[{"pct":0.65,"reps":5},{"pct":0.75,"reps":5},{"pct":0.85,"reps":5,"amrap":true}]},{"label":"3s","targetRpe":8.5,"sets":[{"pct":0.7,"reps":3},{"pct":0.8,"reps":3},{"pct":0.9,"reps":3,"amrap":true}]},{"label":"5/3/1","targetRpe":9,"sets":[{"pct":0.75,"reps":5},{"pct":0.85,"reps":3},{"pct":0.95,"reps":1,"amrap":true}]},{"label":"Deload","targetRpe":6,"deload":true,"sets":[{"pct":0.4,"reps":5},{"pct":0.5,"reps":5},{"pct":0.6,"reps":5}]}]},"peak":{"label":"Peak single","weeks":[{"label":"Single @8","targetRpe":8,"sets":[{"pct":0.925,"reps":1,"amrap":true,"top":true},{"pct":0.8,"reps":3,"count":3}]},{"label":"Single @8.5","targetRpe":8.5,"sets":[{"pct":0.975,"reps":1,"amrap":true,"top":true},{"pct":0.825,"reps":3,"count":3}]},{"label":"Single @9","targetRpe":9,"sets":[{"pct":1.025,"reps":1,"amrap":true,"top":true},{"pct":0.85,"reps":3,"count":2}]},{"label":"Deload","targetRpe":6,"deload":true,"sets":[{"pct":0.4,"reps":5},{"pct":0.5,"reps":5},{"pct":0.6,"reps":3}]}]},"fsl3x5":{"label":"First set last 3\u00d75","weeks":[{"targetRpe":8,"sets":[{"pct":0.65,"reps":5,"count":3,"amrap":true}]},{"targetRpe":8,"sets":[{"pct":0.7,"reps":5,"count":3,"amrap":true}]},{"targetRpe":8,"sets":[{"pct":0.75,"reps":5,"count":3,"amrap":true}]},{"targetRpe":6,"deload":true,"sets":[{"pct":0.4,"reps":5,"count":2}]}]},"fsl3x3":{"label":"First set last 3\u00d73","weeks":[{"targetRpe":8,"sets":[{"pct":0.65,"reps":3,"count":3}]},{"targetRpe":8,"sets":[{"pct":0.7,"reps":3,"count":3}]},{"targetRpe":8,"sets":[{"pct":0.75,"reps":3,"count":2}]},{"targetRpe":6,"deload":true,"sets":[{"pct":0.4,"reps":3,"count":2}]}]},"light":{"label":"Paused / technique","weeks":[{"targetRpe":7,"sets":[{"pct":0.65,"reps":5,"count":3}]},{"targetRpe":7,"sets":[{"pct":0.65,"reps":5,"count":3}]},{"targetRpe":7,"sets":[{"pct":0.7,"reps":5,"count":3}]},{"targetRpe":6,"deload":true,"sets":[{"pct":0.5,"reps":5,"count":2}]}]}},"days":[{"id":"A","name":"Day A","exercises":[{"name":"Squat (Barbell)","mode":"main","scheme":"531","peakScheme":"peak","tm":340,"increment":10},{"name":"Bench Press (Barbell)","mode":"main","scheme":"531","tm":260,"increment":5},{"name":"Sumo Deadlift \u2014 FSL","label":"Sumo \u2014 light triples","mode":"supplemental","scheme":"fsl3x3","tmFrom":"Sumo Deadlift","noProgress":true,"skipInPeak":true},{"name":"Seated Cable Row - Bar Grip","mode":"accessory","sets":3,"reps":"12-15","weight":120,"increment":5}]},{"id":"B","name":"Day B","exercises":[{"name":"Sumo Deadlift","mode":"main","scheme":"531","peakScheme":"peak","tm":380,"increment":10},{"name":"Bench Press (Barbell) \u2014 FSL","label":"Bench \u2014 FSL","mode":"supplemental","scheme":"fsl3x5","tmFrom":"Bench Press (Barbell)","noProgress":true},{"name":"Squat (Barbell) \u2014 FSL","label":"Squat \u2014 FSL","mode":"supplemental","scheme":"fsl3x5","tmFrom":"Squat (Barbell)","noProgress":true,"skipInPeak":true},{"name":"Lat Pulldown (Cable)","mode":"accessory","sets":3,"reps":"12-15","weight":120,"increment":5},{"name":"Face Pull","mode":"accessory","sets":2,"reps":"15","weight":60,"increment":5}]},{"id":"C","name":"Day C","exercises":[{"name":"Squat (Barbell) \u2014 Paused","label":"Squat \u2014 paused","mode":"supplemental","scheme":"light","tmFrom":"Squat (Barbell)","noProgress":true,"skipInPeak":true},{"name":"Romanian Deadlift (Barbell)","mode":"accessory","sets":3,"reps":"8","weight":265,"increment":10},{"name":"EZ Bar Biceps Curl","mode":"accessory","sets":3,"reps":"12-15","weight":45,"increment":5},{"name":"Skullcrusher (Barbell)","mode":"accessory","sets":3,"reps":"15-20","weight":45,"increment":5},{"name":"Overhead Press (Barbell)","mode":"accessory","sets":3,"reps":"8-12","weight":75,"increment":5},{"name":"Ab Wheel","mode":"accessory","sets":3,"reps":"10-15","bodyweight":true}],"note":"Optional extra day \u2014 the accessory work trimmed off A and B so those stay near an hour. Outside the wave, so doing it or skipping it never moves your cycle. Skip it during cycle 1 while you re-accumulate."},{"id":"T","name":"Hotel gym","note":"Travel session \u2014 it does not advance your cycle, it protects it. Loads are light, so take every set to within 1\u20132 reps of failure; that is what makes a light load count. If a trip is coming and you are on week 3, take your deload during the trip instead.","exercises":[{"name":"Goblet Squat","mode":"accessory","sets":3,"reps":"12-20","weight":null,"increment":5},{"name":"Romanian Deadlift (Dumbbell)","mode":"accessory","sets":3,"reps":"10-15","weight":null,"increment":5},{"name":"Bench Press (Dumbbell)","mode":"accessory","sets":3,"reps":"10-20","weight":null,"increment":5},{"name":"Bent Over Row (Dumbbell)","mode":"accessory","sets":3,"reps":"10-15","weight":null,"increment":5},{"name":"Lateral Raise (Dumbbell)","mode":"accessory","sets":2,"reps":"15-20","weight":null,"increment":5},{"name":"Plank","mode":"accessory","sets":3,"reps":"45-60s","bodyweight":true}]},{"id":"R","name":"Room only","note":"Travel session \u2014 it does not advance your cycle, it protects it. Loads are light, so take every set to within 1\u20132 reps of failure; that is what makes a light load count. If a trip is coming and you are on week 3, take your deload during the trip instead.","exercises":[{"name":"Bulgarian Split Squat","mode":"accessory","sets":3,"reps":"12-20","bodyweight":true},{"name":"Single Leg Romanian Deadlift","mode":"accessory","sets":3,"reps":"12-15","bodyweight":true},{"name":"Push Up","mode":"accessory","sets":3,"reps":"AMRAP","bodyweight":true},{"name":"Inverted Row","mode":"accessory","sets":3,"reps":"10-15","bodyweight":true},{"name":"Single Leg Glute Bridge","mode":"accessory","sets":3,"reps":"15-20","bodyweight":true},{"name":"Plank","mode":"accessory","sets":3,"reps":"45-60s","bodyweight":true}]}]},"history":[{"date":"2024-01-09","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":300.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":215.0,"reps":4,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2024-01-12","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":325.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":135.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-01-16","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":320.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":2,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-01-19","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":350.0,"reps":4,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":135.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-01-22","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":335.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":240.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-01-26","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":365.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":90.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-01-30","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":305.0,"reps":4,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":220.0,"reps":3,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-02-01","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":335.0,"reps":8,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":95.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-02-05","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":325.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-02-08","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":355.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":100.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-02-12","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":305.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":245.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-02-15","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":2,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":105.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-02-19","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":275.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-02-26","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":275.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":4,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-03-01","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":340.0,"reps":8,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":105.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-03-04","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":290.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":240.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-03-08","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":320.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":110.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-03-11","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":310.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":250.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-03-13","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":340.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":115.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-03-18","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":280.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-03-22","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":310.0,"reps":8,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-03-25","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":300.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":242.5,"reps":2,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-03-28","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":329.0,"reps":7,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-04-01","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":314.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":257.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-04-05","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":347.0,"reps":6,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":125.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-04-15","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":285.0,"reps":4,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":234.0,"reps":3,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-04-22","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":225.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":185.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":100.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-04-26","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":315.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-04-29","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":285.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":234.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":110.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-05-03","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":315.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-05-07","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":302.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":248.0,"reps":2,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":120.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-05-10","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":335.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":115.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-05-13","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":318.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":234.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":125.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-05-16","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":352.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":115.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-05-21","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":289.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":234.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-05-24","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":319.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-05-27","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":306.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":248.0,"reps":1,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":135.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-05-30","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":338.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":125.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-06-03","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":323.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":261.0,"reps":1,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-06-08","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":356.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-06-10","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":293.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":238.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-06-14","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":323.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":135.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-06-17","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":311.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":252.0,"reps":1,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":150.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-06-21","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":342.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-06-24","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":328.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":238.0,"reps":2,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":155.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2024-06-28","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":361.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2024-07-15","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":285.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":214.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-07-18","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":293.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-07-22","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":279.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-07-25","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":311.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-07-29","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":295.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":238.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":150.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-08-02","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":155.0,"reps":32,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":135.0,"reps":22,"rpe":null,"expected":null},{"name":"Sumo Deadlift","weight":185.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2024-08-06","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":295.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-08-09","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":268.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":217.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":155.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-08-12","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":298.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-08-14","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":284.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":160.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-08-19","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":315.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-08-22","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":299.0,"reps":4,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":242.0,"reps":1,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":165.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-08-26","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":333.0,"reps":8,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":135.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-09-06","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":272.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":218.0,"reps":2,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":170.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-09-09","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":306.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-09-12","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":272.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":218.0,"reps":6,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":170.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-09-24","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":306.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-09-27","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":288.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":175.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-10-01","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":324.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-10-07","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":218.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":272.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":175.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-10-10","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":306.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-10-15","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":230.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":288.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":180.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-10-19","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":324.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-10-21","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":243.0,"reps":1,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":304.0,"reps":2,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":180.0,"reps":10,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":45.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-10-25","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":342.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-10-28","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":219.0,"reps":6,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":276.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":180.0,"reps":10,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":50.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-11-05","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":320.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":150.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-11-09","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":232.0,"reps":4,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":293.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":55.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-11-21","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":338.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":150.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-11-26","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":245.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":309.0,"reps":4,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":190.0,"reps":10,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":60.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-11-30","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":356.0,"reps":6,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":150.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-12-03","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":221.0,"reps":6,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":285.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":195.0,"reps":10,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":65.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2024-12-06","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":332.0,"reps":11,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":155.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2024-12-28","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":234.0,"reps":4,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":302.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":200.0,"reps":10,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":70.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2025-01-08","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":289.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":221.0,"reps":4,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":195.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-01-10","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":349.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":234.0,"reps":2,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":155.0,"reps":3,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-01-13","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":247.0,"reps":1,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":306.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":195.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-01-16","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":369.0,"reps":4,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":222.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-01-19","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":9.5,"expected":null},{"name":"Squat (Barbell)","weight":323.0,"reps":1,"rpe":8.5,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":195.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-01-21","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":390.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":150.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-01-24","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":293.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":200.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-01-27","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":355.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":4,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":155.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-01-30","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":250.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":311.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":205.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-02-03","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":160.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-02-05","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":240.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":328.0,"reps":1,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":185.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-02-08","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":395.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":250.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":165.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-02-11","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":300.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":190.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-02-13","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":360.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":240.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":170.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-02-17","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":252.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":315.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":192.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-02-20","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":380.0,"reps":8,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":7,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":175.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-03-01","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":240.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":336.0,"reps":2,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":195.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-03-03","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":401.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":253.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":180.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-03-11","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":230.0,"reps":7,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":305.0,"reps":4,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":200.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-03-13","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":365.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":245.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":185.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-03-17","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":256.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":320.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":205.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-03-19","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":390.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":185.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-03-24","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":245.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":337.0,"reps":2,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":210.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-03-27","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":410.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":262.0,"reps":2,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":190.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-03-31","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":185.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-05","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":270.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-08","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":250.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":325.0,"reps":3,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep - Day A"},{"date":"2025-04-11","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":391.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":255.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":195.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"531 Comp Prep Day B"},{"date":"2025-04-15","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":331.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":246.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-17","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":391.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":246.0,"reps":1,"rpe":null,"expected":null},{"name":"Overhead Press (Barbell)","weight":155.0,"reps":6,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-21","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":328.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":246.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-23","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":246.0,"reps":1,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":331.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-25","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":405.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":246.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-04-28","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":331.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":246.0,"reps":1,"rpe":null,"expected":null},{"name":"Sumo Deadlift","weight":391.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-05-03","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":358.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":270.0,"reps":1,"rpe":null,"expected":null},{"name":"Sumo Deadlift","weight":429.7,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2025-05-12","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":270.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":135.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-05-19","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":325.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":210.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":25.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-06-09","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":135.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":135.0,"reps":10,"rpe":null,"expected":null},{"name":"Overhead Press (Barbell)","weight":45.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-06-12","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":325.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":210.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":40.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-06-16","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":275.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":145.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-06-20","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":330.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":150.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":215.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":50.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-06-23","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":280.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":155.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":7,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-06-27","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":335.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":160.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":220.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":55.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-06-30","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":285.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":165.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-07-03","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":340.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":170.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":60.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-07-09","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":290.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":175.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-07-16","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":345.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":180.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":60.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-07-21","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":295.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-07-25","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":355.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":190.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":65.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-07-29","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":300.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":195.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-08-03","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":366.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":200.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":65.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-08-08","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":305.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":205.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-08-14","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":366.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":210.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-08-19","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":315.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":215.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":180.0,"reps":5,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-08-26","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":370.0,"reps":3,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":220.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-09-09","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":320.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":225.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":180.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-09-12","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":370.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-09-16","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":320.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":240.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":230.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-09-19","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":240.0,"reps":5,"rpe":null,"expected":null},{"name":"Face Pull","weight":70.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-09-23","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":320.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-09-30","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":225.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":185.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-10-07","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":250.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":90.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-10-13","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":235.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":110.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-10-18","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":185.0,"reps":10,"rpe":null,"expected":null},{"name":"Sumo Deadlift","weight":265.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-10-21","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":245.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":190.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-11-07","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":135.0,"reps":20,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":185.0,"reps":15,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":160.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2025-11-11","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":275.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":165.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":160.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2025-11-17","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":285.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":200.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2025-11-22","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":335.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":160.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2025-11-28","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":305.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":247.0,"reps":2,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2025-12-02","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":350.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2025-12-07","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":240.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":320.0,"reps":3,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":160.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2025-12-17","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":255.0,"reps":2,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2025-12-31","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":300.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":230.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2026-01-05","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":245.0,"reps":3,"rpe":null,"expected":null},{"name":"Sumo Deadlift","weight":355.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2026-01-08","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":257.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":315.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day A"},{"date":"2026-01-13","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null}],"imported":true,"title":"BBB - Day B"},{"date":"2026-01-15","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":250.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":335.0,"reps":1,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":225.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":120.0,"reps":15,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-01-20","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":395.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":265.0,"reps":2,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-01-23","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":305.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":235.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":130.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-01-26","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":365.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":250.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":125.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-01-29","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":260.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":320.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":240.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":135.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-02-02","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":390.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":240.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":125.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-02-06","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":251.0,"reps":4,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":340.0,"reps":2,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":245.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":140.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-02-09","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":410.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":265.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":125.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-02-11","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":240.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":310.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":250.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":145.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":17,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-02-16","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":6,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":250.0,"reps":4,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":130.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-02-18","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":265.0,"reps":1,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":330.0,"reps":3,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":255.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":150.0,"reps":11,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-02-21","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":400.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":241.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":135.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-02-24","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":255.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":350.0,"reps":1,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":260.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":155.0,"reps":13,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":22,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-02-27","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":420.0,"reps":2,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":270.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-03-25","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":275.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":4,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2026-03-30","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":310.0,"reps":3,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":260.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":150.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":45.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-04-02","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":55.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-04-06","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":310.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":235.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":155.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":60.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-04-10","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":375.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":250.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-04-14","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":235.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":330.0,"reps":2,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":240.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":160.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":65.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-04-18","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":400.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":140.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-04-21","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":250.0,"reps":3,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":345.0,"reps":1,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":245.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":165.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":70.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-04-24","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":420.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":265.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":145.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-04-28","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":240.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":315.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":250.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":170.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":75.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-05-01","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":385.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":255.0,"reps":3,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":150.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-05-05","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":270.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":335.0,"reps":2,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":255.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":170.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":80.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-05-08","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":405.0,"reps":3,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":245.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":155.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-05-12","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":260.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":355.0,"reps":1,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":260.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":175.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":85.0,"reps":7,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-05-15","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":430.0,"reps":1,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":271.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":155.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-05-18","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":135.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":185.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":135.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":90.0,"reps":10,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":40.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-05-21","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":225.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":135.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":90.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-05-26","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":245.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":280.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":265.0,"reps":10,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":90.0,"reps":20,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-06-01","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":245.0,"reps":4,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":300.0,"reps":7,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":265.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":110.0,"reps":10,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-06-04","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":365.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":260.0,"reps":1,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":100.0,"reps":12,"rpe":null,"expected":null},{"name":"Face Pull","weight":25.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-06-16","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Hack Squat (Machine)","weight":305.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":105.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Morning workout \u2600\ufe0f"},{"date":"2026-06-19","dayId":"?","step":null,"cycle":null,"entries":[{"name":"Hack Squat (Machine)","weight":315.0,"reps":10,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":245.0,"reps":1,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2026-07-01","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":215.0,"reps":5,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":275.0,"reps":5,"rpe":null,"expected":null},{"name":"Hack Squat (Machine)","weight":315.0,"reps":5,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":110.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-07-07","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Hack Squat (Machine)","weight":320.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-07-09","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":325.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":225.0,"reps":3,"rpe":null,"expected":null},{"name":"Hack Squat (Machine)","weight":325.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":110.0,"reps":10,"rpe":null,"expected":null},{"name":"Face Pull","weight":35.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-07-13","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Bench Press (Barbell)","weight":242.0,"reps":2,"rpe":null,"expected":null},{"name":"Squat (Barbell)","weight":300.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":265.0,"reps":8,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-07-16","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":345.0,"reps":6,"rpe":null,"expected":null},{"name":"Overhead Press (Barbell)","weight":100.0,"reps":7,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":175.0,"reps":5,"rpe":null,"expected":null},{"name":"Hack Squat (Machine)","weight":330.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":115.0,"reps":12,"rpe":null,"expected":null},{"name":"Face Pull","weight":45.0,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-07-21","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Hack Squat (Machine)","weight":235.0,"reps":8,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":185.0,"reps":5,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":12,"rpe":null,"expected":null},{"name":"Overhead Press (Barbell)","weight":75.0,"reps":10,"rpe":null,"expected":null},{"name":"Face Pull","weight":50.0,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2026-07-27","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":300.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":242.0,"reps":4,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":265.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":120.0,"reps":12,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":40.0,"reps":12,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":40.0,"reps":12,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":10,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-07-31","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":345.0,"reps":5,"rpe":null,"expected":null},{"name":"Overhead Press (Barbell)","weight":100.0,"reps":11,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":185.0,"reps":5,"rpe":null,"expected":null},{"name":"Hack Squat (Machine)","weight":335.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":120.0,"reps":15,"rpe":null,"expected":null},{"name":"Face Pull","weight":60.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Day B"},{"date":"2026-08-04","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":305.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":235.0,"reps":4,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":270.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":125.0,"reps":12,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":45.0,"reps":15,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":45.0,"reps":20,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day A"},{"date":"2026-08-28","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":205.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":155.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":185.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":100.0,"reps":12,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":45.0,"reps":15,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":45.0,"reps":20,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2026-09-01","dayId":"B","step":null,"cycle":null,"entries":[{"name":"Sumo Deadlift","weight":275.0,"reps":5,"rpe":null,"expected":null},{"name":"Overhead Press (Barbell)","weight":75.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":155.0,"reps":5,"rpe":null,"expected":null},{"name":"Hack Squat (Machine)","weight":275.0,"reps":10,"rpe":null,"expected":null},{"name":"Lat Pulldown (Cable)","weight":100.0,"reps":15,"rpe":null,"expected":null},{"name":"Face Pull","weight":55.0,"reps":15,"rpe":null,"expected":null}],"imported":true,"title":"Afternoon workout \ud83d\udcaa"},{"date":"2026-09-04","dayId":"A","step":null,"cycle":null,"entries":[{"name":"Squat (Barbell)","weight":290.0,"reps":5,"rpe":null,"expected":null},{"name":"Bench Press (Barbell)","weight":220.0,"reps":5,"rpe":null,"expected":null},{"name":"Romanian Deadlift (Barbell)","weight":265.0,"reps":8,"rpe":null,"expected":null},{"name":"Seated Cable Row - Bar Grip","weight":120.0,"reps":15,"rpe":null,"expected":null},{"name":"EZ Bar Biceps Curl","weight":45.0,"reps":15,"rpe":null,"expected":null},{"name":"Skullcrusher (Barbell)","weight":45.0,"reps":20,"rpe":null,"expected":null},{"name":"Ab Wheel","weight":null,"reps":12,"rpe":null,"expected":null}],"imported":true,"title":"Day A"}],"cycle":{"step":1,"cycleNum":1,"nextDay":"B"},"settings":{"units":"lb","round":5,"bar":45,"plates":"45,35,25,10,5,2.5","tmMode":"cycle","restSeconds":180,"block":"capacity"}};
+
+const DEFAULT_STATE = () => {
+  const s = {
+    v: 1,
+    program: defaultProgram(),
+    settings: { units: 'lb', round: 5, bar: 45, plates: '45,35,25,10,5,2.5', tmMode: 'cycle', apiKey: '', apiBase: 'https://api.hevyapp.com', restSeconds: 180, block: 'capacity', jokers: false, rampFirstCycle: true },
+    cycle: { step: 1, cycleNum: 1, nextDay: 'A' },
+    readiness: { date: '', sleep: 7, sore: 2, energy: 3 },
+    history: [],
+    pending: {},
+    map: {},
+    templates: { at: 0, list: [] },
+    routines: {},
+    dayOverride: null
+  };
+  if (typeof SEED === 'object' && SEED && SEED.program) {
+    const c = o => JSON.parse(JSON.stringify(o));
+    s.program = c(SEED.program);
+    s.history = c(SEED.history || []);
+    s.cycle = c(SEED.cycle || s.cycle);
+    Object.assign(s.settings, SEED.settings || {});
+  }
+  return s;
+};
+
+/* ---------- storage (degrades to memory if blocked) ---------- */
+let storageOk = true;
+function loadState() {
+  let raw = null;
+  try { raw = localStorage.getItem(STORE_KEY); } catch (e) { storageOk = false; }
+  if (!raw) return DEFAULT_STATE();
+  try {
+    const s = JSON.parse(raw);
+    const base = DEFAULT_STATE();
+    return Object.assign(base, s, { settings: Object.assign(base.settings, s.settings || {}) });
+  } catch (e) { return DEFAULT_STATE(); }
+}
+let S = loadState();
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+  catch (e) { storageOk = false; }
+}
+
+/* ---------- units / math helpers ---------- */
+function roundW(w) {
+  const r = +S.settings.round || 5;
+  return Math.round(w / r) * r;
+}
+function fmtW(w) {
+  if (w == null) return '—';
+  const v = Math.round(w * 100) / 100;
+  return (Number.isInteger(v) ? v : v.toFixed(1));
+}
+const toKg = w => S.settings.units === 'kg' ? w : w / LB_PER_KG;
+const fromKg = w => S.settings.units === 'kg' ? w : w * LB_PER_KG;
+const epley = (w, r) => w * (1 + r / 30);
+function e1rm(w, reps, rpe) {
+  if (!w || !reps) return 0;
+  const rir = (rpe == null || rpe === '') ? 0 : clamp(10 - +rpe, 0, 6);
+  return epley(w, reps + rir);
+}
+// cable stacks, machines and dumbbells have no bar to load - skip plate math unless told otherwise
+const NO_PLATES = /cable|machine|pulldown|pushdown|face pull|dumbbell|smith|band|kettlebell|pec deck|lever|assisted/i;
+function showPlates(ex) { return ex.plates != null ? !!ex.plates : !NO_PLATES.test(ex.name); }
+function plateLine(total) {
+  const bar = +S.settings.bar || 0;
+  if (!bar || total <= bar) return null;
+  let per = (total - bar) / 2;
+  const avail = String(S.settings.plates || '').split(',').map(x => parseFloat(x)).filter(x => x > 0).sort((a, b) => b - a);
+  if (!avail.length) return null;
+  const out = [];
+  for (const p of avail) {
+    const n = Math.floor(per / p + 1e-6);
+    if (n > 0) { out.push(n > 1 ? n + '×' + fmtW(p) : fmtW(p)); per -= n * p; }
+  }
+  if (!out.length) return null;
+  let s = out.join(' + ') + ' /side';
+  if (per > 0.01) s += ' (' + fmtW(per) + ' short)';
+  return s;
+}
+
+/* ---------- readiness ---------- */
+function readinessScore(rd) {
+  const s  = clamp((+rd.sleep - 5) / 3, 0, 1);
+  const so = clamp((5 - +rd.sore) / 4, 0, 1);
+  const en = clamp((+rd.energy - 1) / 4, 0, 1);
+  return 0.4 * s + 0.3 * so + 0.3 * en;
+}
+function readinessMult(rd) { return clamp(0.93 + 0.09 * readinessScore(rd), 0.93, 1.02); }
+function readinessWord(x) {
+  if (x >= 0.8) return 'primed';
+  if (x >= 0.6) return 'good';
+  if (x >= 0.4) return 'ok';
+  if (x >= 0.25) return 'flat';
+  return 'beat up';
+}
+
+/* ---------- history lookups ---------- */
+function lastPerf(name) {
+  for (let i = S.history.length - 1; i >= 0; i--) {
+    const h = S.history[i];
+    const e = (h.entries || []).find(x => x.name === name && x.reps != null);
+    if (e) return Object.assign({}, e, { date: h.date, step: h.step });
+  }
+  return null;
+}
+function perfList(name, n) {
+  const out = [];
+  for (let i = S.history.length - 1; i >= 0 && out.length < (n || 99); i--) {
+    const h = S.history[i];
+    const e = (h.entries || []).find(x => x.name === name && x.reps != null);
+    if (e) out.push(Object.assign({}, e, { date: h.date }));
+  }
+  return out;
+}
+function bestE1rm(name, n) {
+  return perfList(name, n || 4).reduce((m, p) => Math.max(m, e1rm(p.weight, p.reps, p.rpe)), 0);
+}
+
+/* ---------- fatigue signal from the last time you touched this lift ---------- */
+function fatigueMult(name, targetRpe) {
+  const p = lastPerf(name);
+  if (!p) return { m: 1, why: [] };
+  const days = (Date.parse(today() + 'T00:00:00') - Date.parse(p.date + 'T00:00:00')) / 864e5;
+  if (!(days >= 0 && days <= 21)) return { m: 1, why: [] };
+  let m = 1; const why = [];
+  if (p.rpe != null && p.rpe !== '') {
+    const d = +p.rpe - (targetRpe == null ? 8 : targetRpe);
+    if (d > 0.25) { m *= clamp(1 - 0.02 * d, 0.94, 1); why.push('last set RPE ' + p.rpe + ' vs ' + targetRpe + ' target'); }
+  }
+  if (p.expected != null && p.reps < p.expected) {
+    m *= 0.98; why.push('missed the rep target last time');
+  }
+  return { m: clamp(m, 0.92, 1), why: why };
+}
+
+/* ---------- resolve a training max ---------- */
+function findExercise(name) {
+  for (const d of S.program.days) {
+    const e = (d.exercises || []).find(x => x.name === name);
+    if (e && e.tm != null) return e;
+  }
+  return null;
+}
+function tmFor(ex) {
+  if (ex.tm != null) return +ex.tm;
+  if (ex.tmFrom) { const src = findExercise(ex.tmFrom); if (src) return +src.tm; }
+  return 0;
+}
+function mainExercises() {
+  const seen = {}, out = [];
+  for (const d of S.program.days) for (const e of (d.exercises || [])) {
+    if (e.tm != null && !seen[e.name]) { seen[e.name] = 1; out.push({ ex: e, day: d.id }); }
+  }
+  return out;
+}
+function allExerciseNames() {
+  const seen = {}, out = [];
+  for (const d of S.program.days) for (const e of (d.exercises || [])) if (!seen[e.name]) { seen[e.name] = 1; out.push(e.name); }
+  return out;
+}
+
+/* ---------- accessory double progression ---------- */
+function accessoryPlan(ex) {
+  const p = lastPerf(ex.name);
+  let w = ex.weight == null ? null : +ex.weight;
+  const why = [];
+  const range = String(ex.reps || '');
+  const topOfRange = /-/.test(range) ? +range.split('-')[1] : null;
+  if (p && p.weight != null) w = +p.weight;
+  if (p && topOfRange && p.reps >= topOfRange) {
+    const inc = ex.increment || (S.settings.units === 'kg' ? 2.5 : 5);
+    if (w != null) { w = roundW(w + inc); why.push('cleared ' + topOfRange + ' reps last time → +' + fmtW(inc)); }
+  } else if (p && topOfRange) {
+    why.push('stay here until ' + topOfRange + ' reps on every set');
+  }
+  return { weight: w, why: why };
+}
+
+/* ---------- build today's prescription ---------- */
+function buildDay(dayId, step, rd) {
+  const prog = S.program;
+  const day = (prog.days || []).find(d => d.id === dayId) || prog.days[0];
+  if (!day) return { day: null, blocks: [] };
+  const rMult = readinessMult(rd);
+  const rScore = readinessScore(rd);
+  const lowDay = rScore < 0.35;
+  const blocks = [];
+
+  for (const ex of (day.exercises || [])) {
+    // during peaking the peak scheme carries its own back-offs, so the supplemental work steps aside
+    if (S.settings.block === 'peak' && ex.skipInPeak) continue;
+    const label = ex.label || ex.name;
+
+    if (!ex.scheme) { // accessory / fixed work
+      const ap = accessoryPlan(ex);
+      const sets = [];
+      const n = +ex.sets || 3;
+      for (let i = 0; i < n; i++) {
+        sets.push({
+          weight: ex.bodyweight ? null : (ap.weight == null ? null : roundW(ap.weight * (lowDay ? Math.min(rMult, 1) : 1))),
+          reps: ex.reps || '8-12', bodyweight: !!ex.bodyweight,
+          // no weight on record and not a bodyweight move: you choose the dumbbell in the room
+          pick: !ex.bodyweight && ap.weight == null
+        });
+      }
+      if (lowDay && sets.length > 2) sets.pop();
+      blocks.push({
+        name: ex.name, label: label, tag: 'accessory', sets: sets, rest: ex.rest || null, plates: showPlates(ex),
+        why: ap.why.concat(lowDay ? ['readiness low — one set trimmed'] : [])
+      });
+      continue;
+    }
+
+    const schemeName = (S.settings.block === 'peak' && ex.peakScheme) ? ex.peakScheme : ex.scheme;
+    const scheme = prog.schemes[schemeName];
+    if (!scheme) continue;
+    const weeks = scheme.weeks || [];
+    const wk = weeks[(step - 1) % weeks.length] || weeks[0];
+    const tm = tmFor(ex);
+    const fm = fatigueMult(ex.name, wk.targetRpe);
+    let mult = rMult * fm.m;
+    if (wk.deload) mult = Math.min(mult, 1);
+    const isMain = ex.mode === 'main' || ex.tm != null;
+
+    const sets = [];
+    if (isMain && (prog.warmups || []).length) {
+      for (const w of prog.warmups) sets.push({ warm: true, weight: roundW(tm * w.pct), reps: w.reps });
+    }
+    const work = wk.sets || [];
+    const explicitTop = work.some(x => x.top);
+    // coming off a layoff: cycle 1 runs one fewer supplemental set, then this switches itself off
+    const ramp = S.settings.rampFirstCycle && S.cycle.cycleNum === 1 && !isMain;
+    work.forEach((s, i) => {
+      const count = Math.max(1, (+s.count || 1) - (ramp ? 1 : 0));
+      for (let c = 0; c < count; c++) {
+        const isLast = explicitTop ? (!!s.top && c === count - 1)
+                                   : (i === work.length - 1 && c === count - 1);
+        const amrap = !!s.amrap && isLast && !lowDay && !wk.deload;
+        sets.push({
+          weight: roundW(tm * s.pct * mult),
+          reps: s.reps, pct: s.pct, amrap: amrap,
+          // "top" means this set drives the TM; a borrowed-TM block never scores its own progression
+          top: !!s.amrap && isLast && !ex.noProgress, expected: s.reps
+        });
+      }
+    });
+    if (lowDay && !isMain && sets.length > 2) sets.pop();
+    // joker: one optional set 5% above the top set, taken only if the AMRAP moved fast
+    if (isMain && S.settings.jokers && !wk.deload && !lowDay && !ex.noProgress) {
+      const topSpec = work.filter(x => x.amrap).pop();
+      if (topSpec) sets.push({
+        weight: roundW(tm * (topSpec.pct + 0.05) * mult),
+        reps: topSpec.reps, joker: true
+      });
+    }
+    // drop any warm-up that has caught up with the first working set
+    const firstWork = sets.find(s => !s.warm);
+    if (firstWork) for (let i = sets.length - 1; i >= 0; i--) {
+      if (sets[i].warm && sets[i].weight >= firstWork.weight) sets.splice(i, 1);
+    }
+
+    const why = [];
+    why.push('TM ' + fmtW(tm) + ' ' + S.settings.units + (wk.label ? ' · ' + wk.label + ' week' : ''));
+    if (rMult !== 1) why.push('readiness ×' + rMult.toFixed(2) + ' (' + readinessWord(rScore) + ')');
+    fm.why.forEach(w => why.push(w + ' → ×' + fm.m.toFixed(2)));
+    if (lowDay) why.push('no AMRAP today — hit the number and stop');
+    const bp = bestE1rm(ex.name, 4);
+    if (bp) why.push('best recent e1RM ' + fmtW(roundW(bp)));
+
+    blocks.push({
+      name: ex.name, label: label, tag: isMain ? 'main' : 'supplemental', rest: ex.rest || null, plates: showPlates(ex),
+      scheme: schemeName, weekLabel: wk.label, targetRpe: wk.targetRpe,
+      tm: tm, deload: !!wk.deload, sets: sets, why: why
+    });
+  }
+  return { day: day, blocks: blocks, rMult: rMult, rScore: rScore, lowDay: lowDay, minutes: estimateMinutes(blocks) };
+}
+
+/* ---------- progression: what a logged top set does to the TM ---------- */
+function tmVerdict(exName, reps, rpe, expected, weight) {
+  const ex = findExercise(exName);
+  if (!ex || expected == null || reps == null) return null;
+  const inc = ex.increment || (S.settings.units === 'kg' ? 2.5 : 5);
+  const surplus = +reps - +expected;
+  if (surplus >= 3) return { delta: 2 * inc, why: '+' + surplus + ' reps over target' };
+  if (surplus >= 1) return { delta: inc, why: '+' + surplus + ' rep' + (surplus > 1 ? 's' : '') + ' over target' };
+  if (surplus === 0) {
+    if (rpe !== '' && rpe != null && +rpe >= 10) return { delta: 0, why: 'target hit but it was a grinder — holding' };
+    return { delta: 0, why: 'hit target exactly — holding' };
+  }
+  const best = Math.max(bestE1rm(exName, 4), e1rm(weight, reps, rpe));
+  const reset = best ? roundW(0.9 * best) : roundW(+ex.tm * 0.9);
+  return { delta: null, reset: Math.min(reset, roundW(+ex.tm * 0.95)), why: 'missed by ' + (-surplus) + ' — resetting TM to 90% of recent e1RM' };
+}
+
+function applyTmChange(name, delta, resetTo) {
+  for (const d of S.program.days) for (const e of (d.exercises || [])) {
+    if (e.name === name && e.tm != null) {
+      if (resetTo != null) e.tm = resetTo;
+      else e.tm = roundW(+e.tm + delta);
+    }
+  }
+}
+function queuePending(name, v) {
+  if (!S.pending[name]) S.pending[name] = { delta: 0, reset: null, why: [] };
+  const p = S.pending[name];
+  if (v.reset != null) { p.reset = v.reset; p.delta = 0; }
+  else if (p.reset == null) p.delta += v.delta;
+  p.why.push(v.why);
+}
+function flushPending() {
+  const applied = [];
+  for (const name of Object.keys(S.pending)) {
+    const p = S.pending[name];
+    const ex = findExercise(name);
+    const before = ex ? +ex.tm : null;
+    if (p.reset != null) applyTmChange(name, 0, p.reset);
+    else if (p.delta) applyTmChange(name, p.delta, null);
+    const after = findExercise(name) ? +findExercise(name).tm : null;
+    if (before !== after) applied.push({ name: name, before: before, after: after, why: p.why.join('; ') });
+  }
+  S.pending = {};
+  return applied;
+}
+
+/* ---------- rotation / wave position ---------- */
+function advanceRotation(loggedDayId) {
+  const rot = S.program.rotation || S.program.days.map(d => d.id);
+  const i = rot.indexOf(loggedDayId == null ? S.cycle.nextDay : loggedDayId);
+  // an extra day that isn't part of the wave leaves the cycle exactly where it was
+  if (i < 0) return null;
+  const wrapped = (i + 1) >= rot.length;
+  S.cycle.nextDay = rot[(i + 1) % rot.length];
+  let rolled = null;
+  if (wrapped) {
+    S.cycle.step++;
+    if (S.cycle.step > (+S.program.cycleSteps || 4)) {
+      S.cycle.step = 1; S.cycle.cycleNum++;
+      if (S.settings.tmMode === 'cycle') rolled = flushPending();
+    }
+  }
+  return rolled;
+}
+
+/* ---- goal progress: verified single vs best estimate vs target ---- */
+function goalProgress() {
+  const goals = (S.program && S.program.goals) || {};
+  const out = [];
+  for (const name of Object.keys(goals)) {
+    const target = +goals[name];
+    if (!target) continue;
+    let single = 0, best = 0, bestSet = null;
+    for (const h of S.history) for (const e of (h.entries || [])) {
+      if (e.name !== name || !e.weight || !e.reps) continue;
+      if (e.reps <= 2 && e.weight > single) single = e.weight;
+      const est = e1rm(e.weight, e.reps, e.rpe);
+      if (est > best) { best = est; bestSet = e; }
+    }
+    out.push({
+      name: name, label: name.split(' (')[0], target: target,
+      single: single, best: Math.round(best), bestSet: bestSet,
+      pct: Math.min(100, Math.round(100 * (single || best) / target))
+    });
+  }
+  return out;
+}
+
+/* ---------- session length estimate ---------- */
+function estimateMinutes(blocks) {
+  let sec = 300;                       // getting changed, general warm-up
+  for (const b of blocks) for (const st of (b.sets || [])) {
+    if (st.warm) sec += 120;
+    else if (b.tag === 'main' || st.joker) sec += 330;
+    else if (b.tag === 'supplemental') sec += 240;
+    else sec += 140;
+  }
+  return Math.round(sec / 60);
+}
+
+/* ---------- consistency: sessions landed vs sessions planned ---------- */
+function consistency() {
+  const now = Date.parse(today() + 'T00:00:00');
+  const age = h => (now - Date.parse(h.date + 'T00:00:00')) / 864e5;
+  const rot = S.program.rotation || [];
+  const recent = (S.history || []).filter(h => { const a = age(h); return a >= 0 && a < 28; });
+  const core = recent.filter(h => rot.indexOf(h.dayId) >= 0).length;
+  const last = (S.history || [])[S.history.length - 1];
+  const target = Math.max(1, rot.length) * 4;   // one full rotation per week
+  return {
+    core: core, extra: recent.length - core, target: target,
+    since: last ? Math.max(0, Math.floor(age(last))) : null,
+    pct: Math.min(100, Math.round(100 * core / target))
+  };
+}
+
+/* ---------- stall detection ---------- */
+function stallAlerts() {
+  const out = [];
+  for (const m of mainExercises()) {
+    const ps = perfList(m.ex.name, 3);
+    const misses = ps.filter(p => p.expected != null && p.reps < p.expected);
+    if (misses.length >= 2 && ps.length >= 2 && ps[0].expected != null && ps[0].reps < ps[0].expected) {
+      out.push({ name: m.ex.name, text: (m.ex.label || m.ex.name) + ' has missed its target twice. Worth resetting the TM.' });
+    } else {
+      const hot = ps.filter(p => p.rpe !== '' && p.rpe != null && +p.rpe >= 9.5);
+      if (hot.length >= 3) out.push({ name: m.ex.name, text: (m.ex.label || m.ex.name) + ' has been RPE 9.5+ three sessions running. Consider a deload.' });
+    }
+  }
+  return out;
+}
+/* ============================================================
+   Hevy API layer
+   ============================================================ */
+function HevyErr(kind, msg) { this.kind = kind; this.message = msg; }
+HevyErr.prototype = Object.create(Error.prototype);
+const round2 = x => Math.round(x * 100) / 100;
+const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+async function hevy(path, opts) {
+  const key = (S.settings.apiKey || '').trim();
+  if (!key) throw new HevyErr('no-key', 'No API key saved yet — add one on the Sync tab.');
+  const base = (S.settings.apiBase || 'https://api.hevyapp.com').replace(/\/+$/, '');
+  let res;
+  try {
+    res = await fetch(base + '/v1' + path, Object.assign({
+      headers: { 'api-key': key, 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    }, opts || {}));
+  } catch (e) {
+    throw new HevyErr('network', 'The browser could not reach the Hevy API. That is almost always CORS: Hevy\'s API is built for server-to-server calls, so a page can be blocked from calling it directly. Fix: put a tiny proxy in front of it and paste the proxy URL into "API base". Everything else in the app works without this.');
+  }
+  if (res.status === 401 || res.status === 403) throw new HevyErr('auth', 'Hevy rejected the key (' + res.status + '). API keys are a Hevy Pro feature — check the key, and that the subscription is active.');
+  if (res.status === 429) throw new HevyErr('rate', 'Rate limited by Hevy. Wait a minute and try again.');
+  if (!res.ok) {
+    let t = ''; try { t = await res.text(); } catch (e) {}
+    throw new HevyErr('http', 'Hevy returned ' + res.status + (t ? ': ' + t.slice(0, 240) : ''));
+  }
+  if (res.status === 204) return null;
+  try { return await res.json(); } catch (e) { return null; }
+}
+
+async function fetchTemplates() {
+  let page = 1, all = [], guard = 0;
+  while (guard++ < 40) {
+    const j = await hevy('/exercise_templates?page=' + page + '&pageSize=100');
+    const arr = (j && j.exercise_templates) || [];
+    all = all.concat(arr.map(t => ({ id: t.id, title: t.title, pm: t.primary_muscle_group })));
+    const pc = (j && j.page_count) || 1;
+    if (!arr.length || page >= pc) break;
+    page++;
+  }
+  S.templates = { at: Date.now(), list: all };
+  autoMap(); save();
+  return all.length;
+}
+function autoMap() {
+  const list = S.templates.list || [];
+  if (!list.length) return;
+  for (const name of allExerciseNames()) {
+    if (S.map[name]) continue;
+    const n = norm(name);
+    const longest = cands => cands.sort((x, y) => y.title.length - x.title.length)[0];
+    let hit = list.find(t => norm(t.title) === n)
+      || longest(list.filter(t => norm(t.title).indexOf(n) === 0))
+      || longest(list.filter(t => n.indexOf(norm(t.title)) === 0));
+    if (hit) S.map[name] = { id: hit.id, title: hit.title };
+  }
+}
+
+function repsToSet(rawReps, weight, isWarm) {
+  const set = {
+    type: isWarm ? 'warmup' : 'normal',
+    weight_kg: weight == null ? null : Math.round(toKg(weight) * 1000) / 1000,
+    reps: null, distance_meters: null, duration_seconds: null, custom_metric: null
+  };
+  const r = String(rawReps == null ? '' : rawReps).trim();
+  if (/^\d+$/.test(r)) set.reps = +r;
+  else if (/^\d+\s*-\s*\d+$/.test(r)) {
+    const p = r.split('-').map(x => parseInt(x, 10));
+    set.reps = p[0]; set.rep_range = { start: p[0], end: p[1] };
+  }
+  return set;
+}
+
+async function pushRoutine() {
+  const plan = currentPlan();
+  if (!plan.day) throw new HevyErr('plan', 'No day to push.');
+  const exercises = [];
+  for (const b of plan.blocks) {
+    const m = S.map[b.name];
+    if (!m) throw new HevyErr('map', 'No Hevy exercise mapped for "' + b.name + '". Set it under Sync → Exercise mapping.');
+    const amrapSet = b.sets.filter(s => s.amrap)[0];
+    const note = (amrapSet ? 'Last set AMRAP — beat ' + amrapSet.reps + '. ' : '')
+      + (b.sets.some(x => x.joker) ? 'Final set is an optional joker — skip unless the AMRAP was fast. ' : '') + (b.why || []).slice(0, 2).join(' · ');
+    exercises.push({
+      exercise_template_id: m.id,
+      superset_id: null,
+      rest_seconds: b.rest || +S.settings.restSeconds || 180,
+      notes: note.slice(0, 240) || null,
+      sets: b.sets.map(s => repsToSet(s.amrap ? String(s.reps) : s.reps, s.weight, s.warm))
+    });
+  }
+  const title = 'Coach · ' + plan.day.name + ' · C' + S.cycle.cycleNum + 'W' + S.cycle.step;
+  const notes = planText(plan).slice(0, 900);
+  const existing = S.routines[plan.day.id];
+  let j = null;
+  if (existing) {
+    try {
+      j = await hevy('/routines/' + existing, { method: 'PUT', body: JSON.stringify({ routine: { title: title, notes: notes, exercises: exercises } }) });
+    } catch (e) {
+      if (e.kind !== 'http') throw e;
+      delete S.routines[plan.day.id];
+      j = await hevy('/routines', { method: 'POST', body: JSON.stringify({ routine: { title: title, notes: notes, folder_id: null, exercises: exercises } }) });
+    }
+  } else {
+    j = await hevy('/routines', { method: 'POST', body: JSON.stringify({ routine: { title: title, notes: notes, folder_id: null, exercises: exercises } }) });
+  }
+  let id = null;
+  if (j) {
+    const r = j.routine || j;
+    id = Array.isArray(r) ? (r[0] && r[0].id) : r.id;
+  }
+  if (id) { S.routines[plan.day.id] = id; save(); }
+  return title;
+}
+
+function topSetOf(exercise) {
+  let best = null;
+  for (const s of (exercise.sets || [])) {
+    if (s.type === 'warmup') continue;
+    if (s.weight_kg == null && s.reps == null) continue;
+    const w = s.weight_kg == null ? 0 : s.weight_kg;
+    if (!best || w > (best.weight_kg == null ? 0 : best.weight_kg)) best = s;
+  }
+  return best;
+}
+
+async function pullRecent() {
+  const j = await hevy('/workouts?page=1&pageSize=10');
+  const ws = (j && j.workouts) || [];
+  if (!ws.length) throw new HevyErr('empty', 'No workouts came back from Hevy.');
+  const w = ws[0];
+  const found = {};
+  for (const ex of (w.exercises || [])) {
+    const top = topSetOf(ex);
+    if (!top) continue;
+    let name = null;
+    for (const n of allExerciseNames()) {
+      const m = S.map[n];
+      if ((m && m.id === ex.exercise_template_id) || norm(n) === norm(ex.title)) { name = n; break; }
+    }
+    if (!name) continue;
+    found[name] = {
+      weight: top.weight_kg == null ? null : Math.round(fromKg(top.weight_kg) * 10) / 10,
+      reps: top.reps, rpe: top.rpe == null ? '' : top.rpe
+    };
+  }
+  return { workout: w, found: found, count: Object.keys(found).length };
+}
+
+/* ============================================================
+   Import: build the whole program out of the Hevy account
+   ============================================================ */
+const MAIN_RE = /(squat|bench press|deadlift|overhead press|shoulder press|military press|strict press)/i;
+const BIG_RE  = /(squat|deadlift|hip thrust|leg press)/i;
+function looksMain(title) { return MAIN_RE.test(title) && /barbell|smith/i.test(title); }
+
+async function fetchAllWorkouts(sinceDate, onProgress) {
+  let page = 1, out = [], pc = 1;
+  while (page <= 300) {
+    const j = await hevy('/workouts?page=' + page + '&pageSize=10');
+    const arr = (j && j.workouts) || [];
+    out = out.concat(arr);
+    pc = (j && j.page_count) || 1;
+    if (onProgress) onProgress(out.length, pc * 10, page, pc);
+    const oldest = arr.length ? String(arr[arr.length - 1].start_time).slice(0, 10) : null;
+    if (sinceDate && oldest && oldest < sinceDate) break;
+    if (!arr.length || page >= pc) break;
+    page++;
+    await new Promise(r => setTimeout(r, 120));
+  }
+  return out;
+}
+
+function repSpecOf(sets) {
+  const reps = sets.map(s => s.reps).filter(r => r != null);
+  const rr = sets.map(s => s.rep_range).filter(Boolean)[0];
+  if (rr && rr.start != null && rr.end != null) return rr.start + '-' + rr.end;
+  if (!reps.length) return '8-12';
+  const lo = Math.min.apply(null, reps), hi = Math.max.apply(null, reps);
+  return lo === hi ? String(lo) : lo + '-' + hi;
+}
+function weightOf(sets) {
+  const ws = sets.map(s => s.weight_kg).filter(w => w != null && w > 0);
+  if (!ws.length) return null;
+  ws.sort((a, b) => a - b);
+  return roundW(fromKg(ws[Math.floor(ws.length / 2)]));
+}
+
+function programFromRoutines(routines) {
+  const base = defaultProgram();
+  const days = routines.map((r, i) => ({
+    id: String.fromCharCode(65 + i),
+    name: r.title,
+    hevyRoutineId: r.id,
+    exercises: (r.exercises || []).map(ex => {
+      const title = ex.title || (S.templates.list.find(t => t.id === ex.exercise_template_id) || {}).title || 'Exercise';
+      const work = (ex.sets || []).filter(s => s.type !== 'warmup');
+      const common = { name: title, hevyId: ex.exercise_template_id, rest: ex.rest_seconds || null };
+      if (looksMain(title)) {
+        return Object.assign(common, { mode: 'main', scheme: '531', tm: 0, increment: BIG_RE.test(title) ? 10 : 5 });
+      }
+      const w = weightOf(work);
+      return Object.assign(common, {
+        mode: 'accessory', sets: Math.max(1, work.length || 3), reps: repSpecOf(work),
+        weight: w, bodyweight: w == null, increment: 5
+      });
+    })
+  })).filter(d => d.exercises.length);
+  return {
+    name: 'Imported from Hevy',
+    cycleSteps: base.cycleSteps,
+    rotation: days.map(d => d.id),
+    warmups: base.warmups,
+    schemes: base.schemes,
+    days: days
+  };
+}
+
+function historyFromWorkouts(workouts) {
+  const known = allExerciseNames();
+  const byId = {};
+  for (const n of known) if (S.map[n]) byId[S.map[n].id] = n;
+  const matchName = (title, tid) => byId[tid] || known.find(k => norm(k) === norm(title)) || null;
+  const days = S.program.days || [];
+  const out = [];
+  for (const w of workouts) {
+    const entries = [];
+    for (const ex of (w.exercises || [])) {
+      const nm = matchName(ex.title, ex.exercise_template_id);
+      if (!nm) continue;
+      const top = topSetOf(ex);
+      if (!top || top.reps == null) continue;
+      entries.push({
+        name: nm,
+        // what was actually lifted — kept exact, not snapped to the plate increment
+        weight: top.weight_kg == null ? null : Math.round(fromKg(top.weight_kg) * 10) / 10,
+        reps: top.reps, rpe: top.rpe == null ? null : top.rpe, expected: null
+      });
+    }
+    if (!entries.length) continue;
+    let dayId = '?';
+    const byTitle = days.find(d => norm(d.name) === norm(w.title));
+    if (byTitle) dayId = byTitle.id;
+    else {
+      let best = null, bestN = 0;
+      for (const d of days) {
+        const n = (d.exercises || []).filter(e => entries.some(x => x.name === e.name)).length;
+        if (n > bestN) { bestN = n; best = d; }
+      }
+      if (best && bestN >= 2) dayId = best.id;
+    }
+    out.push({ date: String(w.start_time).slice(0, 10), dayId: dayId, step: null, cycle: null, entries: entries, imported: true, title: w.title });
+  }
+  return out.sort((a, b) => a.date < b.date ? -1 : 1);
+}
+
+function deriveTMs() {
+  const notes = [];
+  for (const d of S.program.days) for (const ex of (d.exercises || [])) {
+    if (ex.tm == null) continue;
+    const best = bestE1rm(ex.name, 8);
+    if (best > 0) {
+      // 90% of the best recent estimated max, but never more than 1.2× what he has actually loaded
+      const heaviest = perfList(ex.name, 8).reduce((m, p) => Math.max(m, p.weight || 0), 0);
+      ex.tm = heaviest ? Math.min(roundW(0.9 * best), roundW(1.2 * heaviest)) : roundW(0.9 * best);
+      notes.push(ex.name.split(' (')[0] + ' ' + fmtW(ex.tm));
+    } else if (!ex.tm) {
+      const p = lastPerf(ex.name);
+      ex.tm = p && p.weight ? roundW(p.weight * 0.9) : 100;
+      notes.push(ex.name.split(' (')[0] + ' ' + fmtW(ex.tm) + ' (guess)');
+    }
+  }
+  return notes;
+}
+
+function mergeHistory(rows) {
+  const seen = {};
+  S.history.forEach(h => seen[h.date + '|' + (h.title || '') + '|' + h.entries.length] = 1);
+  const add = rows.filter(r => !seen[r.date + '|' + (r.title || '') + '|' + r.entries.length]);
+  S.history = S.history.concat(add).sort((a, b) => a.date < b.date ? -1 : 1).slice(-400);
+  return add.length;
+}
+
+async function importFromHevy(historyOnly) {
+  const say = m => setStatus('#importStatus', m, 'busy');
+  say('Loading exercise catalogue…');
+  if (!(S.templates.list || []).length) await fetchTemplates();
+
+  if (!historyOnly) {
+    say('Loading routines…');
+    const routines = await pageRoutines();
+    if (!routines.length) throw new HevyErr('empty', 'No routines came back from Hevy — nothing to build a program from. Try "History only".');
+    S.program = programFromRoutines(routines);
+    S.map = {};
+    for (const d of S.program.days) for (const ex of (d.exercises || [])) {
+      if (ex.hevyId) S.map[ex.name] = { id: ex.hevyId, title: ex.name };
+    }
+    autoMap();
+    S.routines = {};
+    for (const d of S.program.days) if (d.hevyRoutineId) S.routines[d.id] = d.hevyRoutineId;
+  }
+
+  const newest = S.history.length ? S.history[S.history.length - 1].date : null;
+  const ws = await fetchAllWorkouts(newest, (n, tot, pg, pc) => say('Loading workouts… ' + n + ' (page ' + pg + '/' + pc + ')'));
+  const rows = historyFromWorkouts(ws);
+  const added = mergeHistory(rows);
+
+  let tmNotes = [];
+  if (!historyOnly) {
+    tmNotes = deriveTMs();
+    const last = S.history[S.history.length - 1];
+    const rot = S.program.rotation || [];
+    if (last && rot.indexOf(last.dayId) >= 0) S.cycle.nextDay = rot[(rot.indexOf(last.dayId) + 1) % rot.length];
+    S.cycle.step = 1; S.cycle.cycleNum = 1; S.pending = {}; S.dayOverride = null;
+  }
+  save(); render();
+  const bits = [];
+  if (!historyOnly) bits.push(S.program.days.length + ' day' + (S.program.days.length === 1 ? '' : 's') + ' from your routines');
+  bits.push(added + ' session' + (added === 1 ? '' : 's') + ' imported (' + S.history.length + ' held)');
+  if (tmNotes.length) bits.push('TMs: ' + tmNotes.join(', '));
+  setStatus('#importStatus', bits.join(' · ') + '. Check the main-lift list on the Program tab.', 'ok');
+}
+
+async function pageRoutines() {
+  let page = 1, out = [], pc = 1;
+  while (page <= 30) {
+    const j = await hevy('/routines?page=' + page + '&pageSize=10');
+    const arr = (j && j.routines) || [];
+    out = out.concat(arr);
+    pc = (j && j.page_count) || 1;
+    if (!arr.length || page >= pc) break;
+    page++;
+    await new Promise(r => setTimeout(r, 120));
+  }
+  return out;
+}
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+function currentDayId() {
+  const ids = (S.program.days || []).map(d => d.id);
+  if (S.dayOverride && ids.indexOf(S.dayOverride) >= 0) return S.dayOverride;
+  return ids.indexOf(S.cycle.nextDay) >= 0 ? S.cycle.nextDay : ids[0];
+}
+function currentPlan() {
+  return buildDay(currentDayId(), S.cycle.step, S.readiness);
+}
+function planText(plan) {
+  const lines = [plan.day.name + ' · cycle ' + S.cycle.cycleNum + ' week ' + S.cycle.step];
+  for (const b of plan.blocks) {
+    const parts = b.sets.filter(s => !s.warm).map(s =>
+      (s.weight == null ? 'BW' : fmtW(s.weight)) + '×' + (s.amrap ? s.reps + '+' : s.reps));
+    lines.push('· ' + b.label + ': ' + parts.join(', '));
+  }
+  return lines.join('\n');
+}
+
+function renderChips() {
+  $('#chipCycle').innerHTML = 'Cycle <b>' + S.cycle.cycleNum + '</b> · Week <b>' + S.cycle.step + '</b>'
+    + (S.settings.block === 'peak' ? ' · <b>Peak</b>' : '');
+  // the chip always reports where the WAVE is, even while you're looking at a travel day
+  const d = (S.program.days || []).find(x => x.id === S.cycle.nextDay);
+  $('#chipDay').innerHTML = 'Up next <b>' + esc(d ? d.name : '—') + '</b>';
+  $('#weekLabel').textContent = 'W' + S.cycle.step;
+}
+
+function renderToday() {
+  const seg = $('#daySeg');
+  seg.innerHTML = (S.program.days || []).map(d =>
+    '<button data-day="' + esc(d.id) + '" class="' + (d.id === currentDayId() ? 'on' : '') + '">' + esc(d.name) + '</button>').join('');
+  $$('#daySeg button').forEach(b => b.onclick = () => { S.dayOverride = b.dataset.day; save(); render(); });
+
+  const rd = S.readiness;
+  $('#rSleep').value = rd.sleep; $('#rSore').value = rd.sore; $('#rEnergy').value = rd.energy;
+  $('#rSleepV').textContent = (+rd.sleep) + 'h';
+  $('#rSoreV').textContent = ['fresh', 'fine', 'some', 'sore', 'wrecked'][rd.sore - 1] || rd.sore;
+  $('#rEnergyV').textContent = ['low', 'meh', 'ok', 'good', 'great'][rd.energy - 1] || rd.energy;
+  const sc = readinessScore(rd), mult = readinessMult(rd);
+  $('#rBar').style.width = Math.round(sc * 100) + '%';
+  $('#rText').textContent = readinessWord(sc) + (rd.date !== today() ? ' · from ' + (rd.date || 'an earlier day') + ', tap to update' : '');
+  $('#rMult').textContent = '×' + mult.toFixed(2);
+
+  const plan = currentPlan();
+  $('#chipMins').textContent = '~' + plan.minutes + ' min';
+  const alerts = [];
+  if (!storageOk) alerts.push('<div class="note warn">This browser is blocking local storage, so nothing will be remembered between visits. On a real page (not a preview) it works normally.</div>');
+  for (const a of stallAlerts()) {
+    alerts.push('<div class="note warn">' + esc(a.text) + ' <button class="btn sm" data-reset-tm="' + esc(a.name) + '" style="margin-left:6px">Reset TM</button></div>');
+  }
+  if (S.settings.rampFirstCycle && S.cycle.cycleNum === 1 && plan.blocks.some(b => b.tag === 'supplemental'))
+    alerts.push('<div class="note">Cycle 1 on-ramp: supplemental work runs one set light while you re-accumulate after the layoff. Full volume from cycle 2 — this turns itself off.</div>');
+  if (plan.day && plan.day.note) alerts.push('<div class="note">' + esc(plan.day.note) + '</div>');
+  if (plan.lowDay) alerts.push('<div class="note bad">Readiness is low. Loads are cut, AMRAPs are off, and a set has been trimmed. Hit the prescribed reps and leave.</div>');
+  const pend = Object.keys(S.pending);
+  if (pend.length && S.settings.tmMode === 'cycle') {
+    alerts.push('<div class="note">TM changes queued for the end of this cycle: ' +
+      pend.map(n => esc(n) + ' ' + (S.pending[n].reset != null ? '→ ' + fmtW(S.pending[n].reset) : (S.pending[n].delta >= 0 ? '+' : '') + fmtW(S.pending[n].delta))).join(', ') + '</div>');
+  }
+  $('#todayAlerts').innerHTML = alerts.join('');
+  $$('#todayAlerts [data-reset-tm]').forEach(b => b.onclick = () => {
+    const name = b.dataset.resetTm;
+    const best = bestE1rm(name, 4);
+    const ex = findExercise(name);
+    if (!ex) return;
+    ex.tm = best ? roundW(0.9 * best) : roundW(ex.tm * 0.9);
+    save(); render();
+  });
+
+  const box = $('#prescription');
+  if (!plan.day) { box.innerHTML = '<div class="card">No days in the program.</div>'; return; }
+  box.innerHTML = plan.blocks.map(b => {
+    const sets = b.sets.map((s, i) => {
+      const w = s.weight != null
+        ? '<span class="w">' + fmtW(s.weight) + '<small>' + S.settings.units + '</small></span>'
+        : (s.pick ? '<span class="w" style="color:var(--dim);font-size:15px">pick</span>'
+                  : '<span class="w">BW</span>');
+      const pl = (s.weight == null || b.plates === false) ? null : plateLine(s.weight);
+      return '<div class="set' + (s.warm ? ' warm' : '') + (s.joker ? ' joker' : '') + '">' +
+        '<span class="idx">' + (s.warm ? 'w' : (s.joker ? 'J' : (i + 1 - b.sets.filter(x => x.warm).length))) + '</span>' +
+        w +
+        '<span class="r">' + esc(String(s.reps)) +
+          (s.amrap ? '+ <span class="badge amrap">AMRAP</span>' : '') +
+          (s.joker ? ' <span class="badge joker">OPTIONAL</span>' : '') + '</span>' +
+        (pl && !s.warm ? '<span class="plates">' + esc(pl) + '</span>' : '') +
+        '</div>';
+    }).join('');
+    return '<div class="ex">' +
+      '<div class="head"><h3 class="grow">' + esc(b.label) + '</h3>' +
+      '<span class="tag">' + esc(b.tag) + (b.weekLabel ? ' · ' + esc(b.weekLabel) : '') + '</span></div>' +
+      '<div class="sets">' + sets + '</div>' +
+      ((b.why || []).length ? '<div class="why">' + b.why.map(esc).join(' · ') + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function renderLog() {
+  const plan = currentPlan();
+  const rows = ['<div class="logrow"><span class="lbl"></span><span class="hd">weight</span><span class="hd">reps</span><span class="hd">rpe</span></div>'];
+  for (const b of plan.blocks) {
+    const top = b.sets.slice().reverse().find(s => !s.warm && !s.joker) || {};
+    const expected = b.sets.filter(s => s.top)[0];
+    rows.push('<div class="logrow" data-name="' + esc(b.name) + '"' + (expected ? ' data-expected="' + expected.expected + '"' : '') + '>' +
+      '<span class="lbl">' + esc(b.label.split(' (')[0]) + (expected ? ' <span class="dim">' + expected.expected + '+</span>' : '') + '</span>' +
+      '<input class="lw" type="number" inputmode="decimal" step="any" value="' + (top.weight == null ? '' : fmtW(top.weight)) + '">' +
+      '<input class="lr" type="number" inputmode="numeric" placeholder="' + esc(String(top.reps || '')) + '">' +
+      '<input class="lrpe" type="number" inputmode="decimal" step="0.5" min="5" max="10" placeholder="' + (b.targetRpe || '') + '">' +
+      '</div>');
+  }
+  $('#logForm').innerHTML = rows.join('');
+
+  const h = S.history.slice(-12).reverse();
+  $('#historyBox').innerHTML = h.length ? '<table class="hist"><tr><th>Date</th><th>Day</th><th>Top sets</th></tr>' +
+    h.map(s => '<tr><td class="mono">' + esc(s.date) + '</td><td>' + esc(s.dayId) + '<span class="dim small"> C' + (s.cycle || '?') + 'W' + (s.step || '?') + '</span></td><td class="small">' +
+      (s.entries || []).map(e => esc((e.name || '').split(' (')[0]) + ' ' + fmtW(e.weight) + '×' + e.reps + (e.rpe ? '@' + e.rpe : '')).join('<br>') +
+      '</td></tr>').join('') + '</table>' : '<div class="dim small">Nothing logged yet.</div>';
+}
+
+function renderProgram() {
+  const mains = mainExercises();
+  $('#tmEditor').innerHTML = mains.map(m =>
+    '<div class="logrow" style="grid-template-columns:1fr 110px"><span class="lbl">' + esc(m.ex.label || m.ex.name) + '</span>' +
+    '<input class="tmv" type="number" step="any" data-name="' + esc(m.ex.name) + '" value="' + fmtW(m.ex.tm) + '"></div>').join('')
+    || '<div class="dim small">No exercises with a training max.</div>';
+  $$('#tmEditor .tmv').forEach(i => i.onchange = () => {
+    const v = parseFloat(i.value);
+    if (isFinite(v)) { applyTmChange(i.dataset.name, 0, v); save(); render(); }
+  });
+  $('#setUnits').value = S.settings.units;
+  $('#setRound').value = S.settings.round;
+  $('#setBar').value = S.settings.bar;
+  $('#setTmMode').value = S.settings.tmMode;
+  $('#setPlates').value = S.settings.plates;
+  $('#setJokers').checked = !!S.settings.jokers;
+  $('#setRamp').checked = !!S.settings.rampFirstCycle;
+  if (document.activeElement !== $('#progJson')) $('#progJson').value = JSON.stringify(S.program, null, 2);
+}
+
+function renderSync() {
+  $('#apiKey').value = S.settings.apiKey || '';
+  $('#apiBase').value = S.settings.apiBase || '';
+  const names = allExerciseNames();
+  $('#mapList').innerHTML = names.map(n => {
+    const m = S.map[n];
+    return '<div class="maprow"><div><div class="nm">' + esc(n) + '</div>' +
+      '<div class="id">' + (m ? '<span class="ok-dot"></span> ' + esc(m.title) : '<span class="no-dot"></span> not mapped') + '</div></div>' +
+      '<button class="btn sm" data-map="' + esc(n) + '">' + (m ? 'Change' : 'Pick') + '</button></div>';
+  }).join('');
+  $$('#mapList [data-map]').forEach(b => b.onclick = () => openPicker(b.dataset.map));
+}
+
+function renderMains() {
+  const rows = [];
+  for (const d of (S.program.days || [])) for (const ex of (d.exercises || [])) {
+    const isMain = ex.tm != null;
+    rows.push('<div class="maprow"><div><div class="nm">' + esc(ex.label || ex.name) + '</div>' +
+      '<div class="id">' + esc(d.name) + (isMain ? ' · TM ' + fmtW(ex.tm) : ' · ' + (ex.sets || 3) + '×' + esc(String(ex.reps || '8-12'))) + '</div></div>' +
+      '<button class="btn sm' + (isMain ? ' primary' : '') + '" data-main="' + esc(d.id) + '|' + esc(ex.name) + '">' + (isMain ? 'Main' : 'Accessory') + '</button></div>');
+  }
+  $('#mainPicker').innerHTML = rows.join('') || '<div class="dim small">No exercises yet.</div>';
+  $$('#mainPicker [data-main]').forEach(b => b.onclick = () => {
+    const bits = b.dataset.main.split('|');
+    const d = (S.program.days || []).find(x => x.id === bits[0]); if (!d) return;
+    const ex = (d.exercises || []).find(x => x.name === bits[1]); if (!ex) return;
+    if (ex.tm != null) {
+      delete ex.tm; delete ex.scheme; ex.mode = 'accessory';
+      ex.sets = ex.sets || 3; ex.reps = ex.reps || '8-12';
+      if (ex.weight == null) { const p = lastPerf(ex.name); ex.weight = p && p.weight ? p.weight : null; ex.bodyweight = ex.weight == null; }
+    } else {
+      ex.mode = 'main'; ex.scheme = '531'; ex.increment = BIG_RE.test(ex.name) ? 10 : 5;
+      const best = bestE1rm(ex.name, 8);
+      ex.tm = best ? roundW(0.9 * best) : (ex.weight ? roundW(ex.weight * 0.9) : 100);
+      delete ex.bodyweight;
+    }
+    save(); render();
+  });
+}
+function renderConsistency() {
+  const c = consistency();
+  $('#consistCount').textContent = c.core + '/' + c.target + (c.extra ? '  +' + c.extra : '');
+  $('#consistBar').style.width = c.pct + '%';
+  let note;
+  if (c.since == null) note = 'Nothing logged yet.';
+  else if (c.since <= 3) note = c.core + ' of ' + c.target + ' planned sessions in 28 days'
+    + (c.extra ? ', plus ' + c.extra + ' extra' : '') + ' · last one ' + (c.since === 0 ? 'today' : c.since + 'd ago');
+  else if (c.since <= 6) note = c.since + ' days since your last session — due.';
+  else note = c.since + ' days out. The wave is paused, not lost: a hotel or room session keeps the streak and the tissue.';
+  $('#consistNote').textContent = note;
+  $('#consistNote').style.color = c.since != null && c.since > 6 ? 'var(--warn)' : '';
+}
+
+function renderGoals() {
+  const gs = goalProgress();
+  $('#goalCard').hidden = !gs.length;
+  if (!gs.length) return;
+  $('#goalRows').innerHTML = gs.map(g => {
+    const shown = g.single || g.best;
+    const estPct = Math.min(100, Math.round(100 * g.best / g.target));
+    const gap = g.target - shown;
+    return '<div class="goal">' +
+      '<div class="top"><span class="nm">' + esc(g.label) + '</span>' +
+      '<span class="num"><b>' + fmtW(shown) + '</b> / ' + fmtW(g.target) + ' ' + S.settings.units + '</span></div>' +
+      '<div class="bar"><i style="width:' + g.pct + '%"></i><u style="left:' + estPct + '%"></u></div>' +
+      '<div class="sub">' +
+        (g.single ? 'verified single ' + fmtW(g.single) : 'no single on record') +
+        ' · best estimate ' + fmtW(g.best) +
+        (g.bestSet ? ' (from ' + fmtW(g.bestSet.weight) + '×' + g.bestSet.reps + ')' : '') +
+        ' · ' + (gap > 0 ? fmtW(gap) + ' to go' : 'target met') +
+      '</div></div>';
+  }).join('');
+}
+
+function renderBlock() {
+  const b = S.settings.block || 'capacity';
+  $$('#blockSeg button').forEach(x => x.classList.toggle('on', x.dataset.block === b));
+  $('#blockNote').textContent = b === 'peak'
+    ? 'Peaking: squat and sumo work up to a heavy single each week with cut-back volume. Run it for one 4-week cycle, then test.'
+    : 'Capacity: 5/3/1 waves with supplemental volume. This is where the strength gets built — run 2–3 cycles before peaking.';
+  $$('#blockSeg button').forEach(x => x.onclick = () => {
+    S.settings.block = x.dataset.block; save(); render();
+  });
+}
+
+function render() { renderChips(); renderConsistency(); renderGoals(); renderToday(); renderLog(); renderProgram(); renderMains(); renderBlock(); renderSync(); }
+
+/* ============================================================
+   Picker dialog
+   ============================================================ */
+let pickFor = null;
+function openPicker(name) {
+  pickFor = name;
+  const dlg = $('#pickDlg');
+  $('#pickSearch').value = name.split(' (')[0];
+  drawPicks();
+  dlg.showModal();
+  setTimeout(() => $('#pickSearch').select(), 50);
+}
+function drawPicks() {
+  const q = norm($('#pickSearch').value);
+  const list = (S.templates.list || []);
+  if (!list.length) { $('#pickResults').innerHTML = '<div class="dim small">No exercise list cached. Hit "Refresh exercise list" once your API key works — or type an ID manually below.</div>' +
+    '<input id="manualId" placeholder="exercise_template_id" style="margin-top:8px"><button class="btn sm" id="manualSave" style="margin-top:8px">Use this ID</button>';
+    const ms = $('#manualSave'); if (ms) ms.onclick = () => {
+      const v = ($('#manualId').value || '').trim();
+      if (v) { S.map[pickFor] = { id: v, title: v }; save(); $('#pickDlg').close(); render(); }
+    };
+    return; }
+  const hits = list.filter(t => !q || norm(t.title).indexOf(q) >= 0).slice(0, 60);
+  $('#pickResults').innerHTML = hits.map(t =>
+    '<div class="maprow" style="margin-bottom:6px"><div><div class="nm">' + esc(t.title) + '</div><div class="id">' + esc(t.pm || '') + '</div></div>' +
+    '<button class="btn sm" data-pick="' + esc(t.id) + '" data-title="' + esc(t.title) + '">Use</button></div>').join('') || '<div class="dim small">No match.</div>';
+  $$('#pickResults [data-pick]').forEach(b => b.onclick = () => {
+    S.map[pickFor] = { id: b.dataset.pick, title: b.dataset.title };
+    save(); $('#pickDlg').close(); render();
+  });
+}
+
+/* ============================================================
+   CSV import (Hevy export)
+   ============================================================ */
+function parseCsv(text) {
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (c !== '\r') cur += c;
+  }
+  if (cur.length || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.length > 1);
+}
+function importCsvText(text) {
+  const rows = parseCsv(text);
+  if (rows.length < 2) throw new Error('That file has no rows I can read.');
+  const head = rows[0].map(h => norm(h));
+  const col = (...cands) => { for (const c of cands) { const i = head.findIndex(h => h === norm(c)); if (i >= 0) return i; }
+    for (const c of cands) { const i = head.findIndex(h => h.indexOf(norm(c)) >= 0); if (i >= 0) return i; } return -1; };
+  const iStart = col('start_time', 'start time', 'date');
+  const iEx    = col('exercise_title', 'exercise name', 'exercise');
+  const iW     = col('weight_lbs', 'weight_kg', 'weight');
+  const iR     = col('reps', 'rep');
+  const iRpe   = col('rpe');
+  const iType  = col('set_type', 'type');
+  if (iEx < 0 || iR < 0) throw new Error('Could not find exercise/reps columns in that CSV.');
+  const wIsKg = iW >= 0 && head[iW].indexOf('kg') >= 0;
+  const sessions = {};
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const when = iStart >= 0 ? String(r[iStart] || '') : '';
+    const d = when.slice(0, 10).replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$3-$1-$2');
+    const key = when || 'unknown';
+    const type = iType >= 0 ? norm(r[iType]) : '';
+    if (type === 'warmup') continue;
+    const name = String(r[iEx] || '').trim();
+    const reps = parseInt(r[iR], 10);
+    if (!name || !isFinite(reps)) continue;
+    let w = iW >= 0 ? parseFloat(r[iW]) : NaN;
+    if (isFinite(w) && wIsKg && S.settings.units === 'lb') w = w * LB_PER_KG;
+    if (isFinite(w) && !wIsKg && S.settings.units === 'kg') w = w / LB_PER_KG;
+    const rpe = iRpe >= 0 ? parseFloat(r[iRpe]) : NaN;
+    sessions[key] = sessions[key] || { date: d || today(), raw: {} };
+    const cur = sessions[key].raw[name];
+    if (!cur || (isFinite(w) && w > (cur.weight || 0))) sessions[key].raw[name] = { weight: isFinite(w) ? Math.round(w * 10) / 10 : null, reps: reps, rpe: isFinite(rpe) ? rpe : null };
+  }
+  const known = allExerciseNames();
+  const matchName = t => known.find(k => norm(k) === norm(t)) || known.find(k => norm(k).indexOf(norm(t)) === 0) || null;
+  const out = [];
+  for (const k of Object.keys(sessions)) {
+    const s = sessions[k];
+    const entries = [];
+    for (const t of Object.keys(s.raw)) {
+      const nm = matchName(t);
+      if (!nm) continue;
+      entries.push(Object.assign({ name: nm, expected: null }, s.raw[t]));
+    }
+    if (entries.length) out.push({ date: s.date, dayId: '?', step: null, cycle: null, entries: entries, imported: true });
+  }
+  out.sort((a, b) => a.date < b.date ? -1 : 1);
+  const seen = {};
+  S.history.forEach(h => seen[h.date + '|' + (h.entries || []).length] = 1);
+  const added = out.filter(o => !seen[o.date + '|' + o.entries.length]);
+  S.history = S.history.concat(added).sort((a, b) => a.date < b.date ? -1 : 1).slice(-400);
+  save();
+  return { sessions: added.length, skipped: out.length - added.length };
+}
+
+/* ============================================================
+   Events
+   ============================================================ */
+function setStatus(el, msg, kind) {
+  const n = $(el); if (!n) return;
+  n.hidden = false; n.textContent = msg;
+  n.className = 'status' + (kind ? ' ' + kind : '');
+}
+function tab(name) {
+  $$('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  ['today', 'log', 'program', 'sync'].forEach(t => $('#tab-' + t).hidden = (t !== name));
+  window.scrollTo(0, 0);
+}
+$$('nav button').forEach(b => b.onclick = () => tab(b.dataset.tab));
+
+['rSleep', 'rSore', 'rEnergy'].forEach(id => {
+  $('#' + id).oninput = () => {
+    S.readiness = {
+      date: today(),
+      sleep: +$('#rSleep').value, sore: +$('#rSore').value, energy: +$('#rEnergy').value
+    };
+    save(); renderToday();
+  };
+});
+$('#weekUp').onclick = () => { S.cycle.step = Math.min(+S.program.cycleSteps || 4, S.cycle.step + 1); save(); render(); };
+$('#weekDown').onclick = () => { S.cycle.step = Math.max(1, S.cycle.step - 1); save(); render(); };
+
+$('#copyPlan').onclick = async () => {
+  const t = planText(currentPlan());
+  try { await navigator.clipboard.writeText(t); $('#copyPlan').textContent = 'Copied'; setTimeout(() => $('#copyPlan').textContent = 'Copy', 1200); }
+  catch (e) { alert(t); }
+};
+
+$('#pushHevy').onclick = async () => {
+  const btn = $('#pushHevy'); btn.disabled = true; const old = btn.textContent; btn.textContent = 'Pushing…';
+  try {
+    const title = await pushRoutine();
+    btn.textContent = 'Pushed ✓';
+    setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1600);
+  } catch (e) {
+    btn.textContent = old; btn.disabled = false;
+    tab('sync'); setStatus('#connStatus', e.message, 'err');
+  }
+};
+
+$('#pullHevy').onclick = async () => {
+  setStatus('#logStatus', 'Pulling…', 'busy');
+  try {
+    const r = await pullRecent();
+    $$('#logForm .logrow[data-name]').forEach(row => {
+      const f = r.found[row.dataset.name];
+      if (!f) return;
+      if (f.weight != null) $('.lw', row).value = fmtW(f.weight);
+      if (f.reps != null) $('.lr', row).value = f.reps;
+      if (f.rpe !== '' && f.rpe != null) $('.lrpe', row).value = f.rpe;
+    });
+    setStatus('#logStatus', 'Filled ' + r.count + ' exercise' + (r.count === 1 ? '' : 's') + ' from "' + (r.workout.title || 'last workout') + '" (' + String(r.workout.start_time || '').slice(0, 10) + '). Check the numbers, then save.', r.count ? 'ok' : 'err');
+  } catch (e) { setStatus('#logStatus', e.message, 'err'); }
+};
+
+$('#saveSession').onclick = () => {
+  const entries = [];
+  $$('#logForm .logrow[data-name]').forEach(row => {
+    const reps = parseInt($('.lr', row).value, 10);
+    if (!isFinite(reps)) return;
+    const w = parseFloat($('.lw', row).value);
+    const rpe = $('.lrpe', row).value;
+    entries.push({
+      name: row.dataset.name,
+      weight: isFinite(w) ? w : null,
+      reps: reps,
+      rpe: rpe === '' ? null : +rpe,
+      expected: row.dataset.expected ? +row.dataset.expected : null
+    });
+  });
+  if (!entries.length) { setStatus('#logStatus', 'Nothing to save — put reps in at least one row.', 'err'); return; }
+  const msgs = [];
+  for (const e of entries) {
+    if (e.expected == null) continue;
+    const v = tmVerdict(e.name, e.reps, e.rpe, e.expected, e.weight);
+    if (!v) continue;
+    e.verdict = v.why;
+    if (S.settings.tmMode === 'session') {
+      const ex = findExercise(e.name); const before = ex ? +ex.tm : null;
+      if (v.reset != null) applyTmChange(e.name, 0, v.reset); else applyTmChange(e.name, v.delta, null);
+      const after = findExercise(e.name) ? +findExercise(e.name).tm : null;
+      if (before !== after) msgs.push(e.name.split(' (')[0] + ' TM ' + fmtW(before) + ' → ' + fmtW(after));
+    } else if (S.settings.tmMode === 'cycle') {
+      queuePending(e.name, v);
+      msgs.push(e.name.split(' (')[0] + ': ' + v.why);
+    } else {
+      msgs.push(e.name.split(' (')[0] + ': ' + v.why + ' (manual mode — TM unchanged)');
+    }
+  }
+  const loggedDay = currentDayId();
+  S.history.push({
+    date: today(), dayId: loggedDay, step: S.cycle.step, cycle: S.cycle.cycleNum,
+    readiness: Object.assign({}, S.readiness), entries: entries
+  });
+  const rolled = advanceRotation(loggedDay);
+  if (rolled && rolled.length) msgs.push('Cycle rolled over — ' + rolled.map(r => r.name.split(' (')[0] + ' ' + fmtW(r.before) + '→' + fmtW(r.after)).join(', '));
+  S.dayOverride = null;
+  save(); render();
+  setStatus('#logStatus', 'Saved. ' + (msgs.join(' · ') || 'Next up: ' + S.cycle.nextDay + '.'), 'ok');
+};
+
+$('#clearHist').onclick = () => { if (confirm('Delete all logged history? Training maxes stay.')) { S.history = []; S.pending = {}; save(); render(); } };
+$('#importCsv').onclick = () => $('#csvFile').click();
+$('#csvFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try { const r = importCsvText(String(fr.result)); render(); setStatus('#logStatus', 'Imported ' + r.sessions + ' session' + (r.sessions === 1 ? '' : 's') + (r.skipped ? ' (' + r.skipped + ' already there)' : '') + '.', 'ok'); }
+    catch (err) { setStatus('#logStatus', err.message, 'err'); }
+  };
+  fr.readAsText(f); e.target.value = '';
+};
+
+['setUnits', 'setRound', 'setBar', 'setTmMode', 'setPlates', 'setJokers', 'setRamp'].forEach(id => {
+  $('#' + id).onchange = () => {
+    S.settings.units = $('#setUnits').value;
+    S.settings.round = parseFloat($('#setRound').value) || 5;
+    S.settings.bar = parseFloat($('#setBar').value) || 0;
+    S.settings.tmMode = $('#setTmMode').value;
+    S.settings.plates = $('#setPlates').value;
+    S.settings.jokers = $('#setJokers').checked;
+    S.settings.rampFirstCycle = $('#setRamp').checked;
+    save(); render();
+  };
+});
+$('#saveProg').onclick = () => {
+  try {
+    const p = JSON.parse($('#progJson').value);
+    if (!p.days || !Array.isArray(p.days) || !p.days.length) throw new Error('Program needs a non-empty "days" array.');
+    for (const d of p.days) { if (!d.id) throw new Error('Every day needs an "id".'); }
+    if (!p.rotation) p.rotation = p.days.map(d => d.id);
+    S.program = p; autoMap(); save(); render();
+    setStatus('#progStatus', 'Program saved.', 'ok');
+  } catch (e) { setStatus('#progStatus', e.message, 'err'); }
+};
+$('#resetProg').onclick = () => {
+  if (!confirm('Reset the program, cycle position and training maxes to the ones built from your Hevy export? Logged history is kept.')) return;
+  const d = DEFAULT_STATE();
+  S.program = d.program; S.cycle = d.cycle; S.pending = {}; S.dayOverride = null;
+  save(); render(); setStatus('#progStatus', 'Program reset to your imported baseline.', 'ok');
+};
+$('#schemaHelp').onclick = () => { $('#helpBody').innerHTML = HELP; $('#helpDlg').showModal(); };
+$('#helpClose').onclick = () => $('#helpDlg').close();
+$('#pickClose').onclick = () => $('#pickDlg').close();
+$('#pickSearch').oninput = drawPicks;
+
+$('#apiKey').onchange = () => { S.settings.apiKey = $('#apiKey').value.trim(); save(); };
+$('#apiBase').onchange = () => { S.settings.apiBase = ($('#apiBase').value.trim() || 'https://api.hevyapp.com'); save(); };
+$('#testConn').onclick = async () => {
+  S.settings.apiKey = $('#apiKey').value.trim();
+  S.settings.apiBase = ($('#apiBase').value.trim() || 'https://api.hevyapp.com'); save();
+  setStatus('#connStatus', 'Testing…', 'busy');
+  try {
+    const j = await hevy('/workouts/count');
+    setStatus('#connStatus', 'Connected. Hevy sees ' + ((j && (j.workout_count != null ? j.workout_count : j.count)) ?? '?') + ' workouts on this account.', 'ok');
+  } catch (e) { setStatus('#connStatus', e.message, 'err'); }
+};
+$('#loadTemplates').onclick = async () => {
+  setStatus('#connStatus', 'Loading exercise list…', 'busy');
+  try { const n = await fetchTemplates(); render(); setStatus('#connStatus', 'Cached ' + n + ' Hevy exercises and auto-matched what it could.', 'ok'); }
+  catch (e) { setStatus('#connStatus', e.message, 'err'); }
+};
+async function runImport(historyOnly) {
+  const btns = [$('#importHevy'), $('#importHistoryOnly')];
+  btns.forEach(b => b.disabled = true);
+  try { await importFromHevy(historyOnly); }
+  catch (e) { setStatus('#importStatus', e.message, 'err'); }
+  btns.forEach(b => b.disabled = false);
+}
+$('#importHevy').onclick = () => runImport(false);
+$('#importHistoryOnly').onclick = () => runImport(true);
+$('#proxyHelp').onclick = () => {
+  $('#helpBody').innerHTML = PROXY_HELP;
+  $('#helpDlg').showModal();
+  const cb = $('#copyWorker');
+  if (cb) cb.onclick = async () => {
+    try { await navigator.clipboard.writeText($('#workerCode').textContent); cb.textContent = 'Copied'; }
+    catch (e) { const r = document.createRange(); r.selectNode($('#workerCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }
+  };
+};
+$('#exportState').onclick = () => {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'wave-scope-' + today() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+};
+$('#importState').onclick = () => $('#stateFile').click();
+$('#stateFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const o = JSON.parse(String(fr.result));
+      if (!o.program) throw new Error('Not a Wave Scope export.');
+      S = Object.assign(DEFAULT_STATE(), o);
+      save(); render(); alert('Data restored.');
+    } catch (err) { alert(err.message); }
+  };
+  fr.readAsText(f); e.target.value = '';
+};
+
+const WORKER = [
+  'export default {',
+  '  async fetch(req) {',
+  '    const cors = {',
+  '      "Access-Control-Allow-Origin": "*",',
+  '      "Access-Control-Allow-Headers": "api-key, content-type",',
+  '      "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS"',
+  '    };',
+  '    if (req.method === "OPTIONS") return new Response(null, { headers: cors });',
+  '    const url = new URL(req.url);',
+  '    const init = {',
+  '      method: req.method,',
+  '      headers: {',
+  '        "api-key": req.headers.get("api-key") || "",',
+  '        "Content-Type": "application/json"',
+  '      }',
+  '    };',
+  '    if (req.method !== "GET" && req.method !== "HEAD") init.body = await req.text();',
+  '    const r = await fetch("https://api.hevyapp.com" + url.pathname + url.search, init);',
+  '    const body = await r.text();',
+  '    return new Response(body, {',
+  '      status: r.status,',
+  '      headers: Object.assign({ "Content-Type": "application/json" }, cors)',
+  '    });',
+  '  }',
+  '};'
+].join('\n');
+
+const PROXY_HELP = [
+  '<p>Hevy built its API for server-to-server use, so it may not send the CORS headers a browser needs. If "Test connection" says the browser could not reach it, put a relay in front:</p>',
+  '<ol style="padding-left:18px;margin:0 0 10px"><li>dash.cloudflare.com → Workers &amp; Pages → Create → Start with Hello World</li>',
+  '<li>Replace the code with the block below and Deploy</li>',
+  '<li>Copy the <code>*.workers.dev</code> URL it gives you</li>',
+  '<li>Paste it into <b>API base</b> here and test again</li></ol>',
+  '<button class="btn sm" id="copyWorker" style="margin-bottom:8px">Copy worker code</button>',
+  '<pre id="workerCode" style="overflow:auto;background:#0b0f16;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11px;line-height:1.35;max-height:38vh;margin:0">' + esc(WORKER) + '</pre>',
+  '<p class="dim" style="margin-top:10px">The worker holds no key — it just forwards the one this app sends. Swap the <code>*</code> in Allow-Origin for your GitHub Pages URL to lock it down.</p>'
+].join('');
+
+const HELP = [
+  '<p><b>days[]</b> — each has <code>id</code>, <code>name</code>, and <code>exercises[]</code>. <code>rotation</code> lists day ids in the order you train them.</p>',
+  '<p><b>cycleSteps</b> — how many weeks in a wave before it resets (4 = three loading weeks + deload).</p>',
+  '<p><b>schemes</b> — named percentage tables. Each has <code>weeks[]</code>, one entry per week of the cycle: <code>{label, targetRpe, deload, sets:[{pct, reps, count, amrap}]}</code>. <code>pct</code> is a fraction of the training max, <code>count</code> repeats a set, <code>amrap</code> on the last set is what drives progression.</p>',
+  '<p><b>exercise entries</b>:<br>· main/supplemental: <code>{name, label, mode, scheme, tm, increment}</code>. Use <code>tmFrom:"Other lift"</code> to borrow a TM instead of owning one.<br>· accessory: <code>{name, sets, reps:"8-12", weight, increment, bodyweight}</code> — double progression, weight goes up once you clear the top of the range.</p>',
+  '<p><b>name</b> must be the name used for Hevy matching; <b>label</b> is only what shows on screen (so "Deadlift (Barbell)" can display as "Sumo Deadlift").</p>',
+  '<p><b>warmups</b> — percentages of the TM added before main work.</p>'
+].join('');
+
+/* ============================================================
+   Install to home screen + offline shell
+   ============================================================ */
+let deferredInstall = null;
+const isStandalone = () => {
+  try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+  catch (e) { return false; }
+};
+function refreshInstallUI() {
+  const can = !!deferredInstall && !isStandalone();
+  const btn = $('#installBtn'), btn2 = $('#installBtn2'), note = $('#installNote');
+  if (btn) btn.hidden = !can;
+  if (btn2) btn2.disabled = !can;
+  if (!note) return;
+  note.textContent = isStandalone()
+    ? 'Installed — running as an app. It works offline; only the Hevy sync needs signal.'
+    : can
+      ? 'Ready to add to your home screen — opens full screen, no browser chrome, works offline.'
+      : 'Serve this over https (GitHub Pages counts). If the button stays greyed out, Chrome\u2019s ⋮ menu → Add to home screen does the same thing.';
+}
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; refreshInstallUI(); });
+addEventListener('appinstalled', () => { deferredInstall = null; refreshInstallUI(); });
+async function doInstall() {
+  if (!deferredInstall) return;
+  try { deferredInstall.prompt(); await deferredInstall.userChoice; } catch (e) {}
+  deferredInstall = null; refreshInstallUI();
+}
+$('#installBtn').onclick = doInstall;
+$('#installBtn2').onclick = doInstall;
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+/* ---------- boot ---------- */
+if (!S.readiness.date) S.readiness.date = today();
+autoMap();
+render();
+refreshInstallUI();
+save();
+</script>
+</body>
+</html>
