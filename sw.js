@@ -1,5 +1,5 @@
 /* Wave Scope service worker — offline shell so the gym's dead spot doesn't matter. */
-const VERSION = 'wave-scope-v1';
+const VERSION = 'wave-scope-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
