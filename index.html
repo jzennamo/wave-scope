@@ -165,6 +165,9 @@ footer{color:var(--dim);font-size:11.5px;text-align:center;padding:18px 0 6px;li
   </nav>
 
   <main>
+    <div class="note good" id="updBanner" role="status" hidden>A new version of Wave Scope is ready.
+      <button class="btn sm" id="updBannerBtn" style="margin-left:6px">Update</button>
+      <div class="small dim" style="margin-top:6px">Keeps your history, cycle position and training maxes.</div></div>
     <!-- ============ TODAY ============ -->
     <section id="tab-today">
       <div id="todayAlerts"></div>
@@ -281,6 +284,10 @@ footer{color:var(--dim);font-size:11.5px;text-align:center;padding:18px 0 6px;li
         <div class="row between wrap" style="gap:8px;margin:2px 0 12px">
           <div class="grow small dim" id="installNote">—</div>
           <button class="btn sm" id="installBtn2">Install app</button>
+        </div>
+        <div class="row between wrap" style="gap:8px;margin:2px 0 12px">
+          <div class="grow small dim">Version <span id="updVersion"></span>. <span id="updStatus" role="status"></span></div>
+          <button class="btn sm" id="updBtn">Check for updates</button>
         </div>
         <label class="row" style="gap:10px;align-items:flex-start">
           <input type="checkbox" id="setJokers" style="width:auto;margin-top:2px">
@@ -2207,6 +2214,78 @@ $('#installBtn2').onclick = doInstall;
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+
+/* ---------- app updates ----------
+   APP_VERSION must match the version string in sw.js. Bump both on every release:
+   the Updates section compares this page's version with the live sw.js. Updating
+   clears the offline cache and reloads; saved data (localStorage, IndexedDB) is
+   not touched. */
+const APP_VERSION = 'wave-scope-v5';
+const AppUpdate = (() => {
+  const el = id => document.getElementById(id);
+  let latest = null, lastCheck = 0;
+  // the version on the server, or null when it can't be reached
+  async function fetchLatest() {
+    try {
+      const r = await fetch('./sw.js?check=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return null;
+      const m = (await r.text()).match(/(?:VERSION|CACHE)\s*=\s*["']([^"']+)["']/);
+      return m ? m[1] : null;
+    } catch (e) { return null; }
+  }
+  // an update already applied this session that still isn't showing means the server
+  // is mid-deploy; don't offer it again in a loop
+  const tried = () => { try { return sessionStorage.getItem('updTried') === latest; } catch (e) { return false; } };
+  const newer = () => !!latest && latest !== APP_VERSION;
+  const ready = () => newer() && !tried();
+  function paint(busy, msg) {
+    const st = el('updStatus'), btn = el('updBtn'), ban = el('updBanner');
+    if (st && msg != null) st.textContent = msg;
+    if (btn) {
+      btn.disabled = busy;
+      btn.textContent = busy ? 'Checking…' : ready() ? 'Update now' : newer() ? 'Try again' : 'Check for updates';
+    }
+    if (ban) ban.hidden = !ready();
+  }
+  async function check(quiet) {
+    if (!quiet) paint(true, 'Checking…');
+    lastCheck = Date.now();
+    const v = await fetchLatest();
+    if (v) latest = v;
+    if (ready()) paint(false, 'A new version is ready. Your saved data stays put.');
+    else if (newer()) paint(false, 'The new version is still rolling out. Try again in a few minutes.');
+    else if (quiet) paint(false, null);
+    else paint(false, v ? 'You have the latest version.' : 'Couldn’t reach the server. Check your connection and try again.');
+  }
+  async function apply() {
+    paint(true, 'Updating…');
+    // never throw the offline copy away without a way to fetch the new one
+    const v = await fetchLatest();
+    if (!v) { paint(false, 'You’re offline, so nothing was changed. Try again with signal.'); return; }
+    latest = v;
+    try {
+      if ('caches' in window) for (const k of await caches.keys()) await caches.delete(k);
+      if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) { try { await r.unregister(); } catch (e) {} }
+    } catch (e) {}
+    try { sessionStorage.setItem('updTried', latest); } catch (e) {}
+    // a query the browser hasn't seen skips its HTTP cache too
+    location.replace(location.pathname + '?u=' + Date.now());
+  }
+  function init() {
+    const just = /[?&]u=\d/.test(location.search);
+    if (just) history.replaceState(null, '', location.pathname + location.hash);
+    const v = el('updVersion'); if (v) v.textContent = APP_VERSION;
+    if (el('updBtn')) el('updBtn').onclick = () => newer() ? apply() : check(false);
+    if (el('updBannerBtn')) el('updBannerBtn').onclick = apply;
+    paint(false, just ? 'Updated. You’re on the latest version.' : '');
+    check(true);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60e3) check(true);
+    });
+  }
+  return { init };
+})();
+AppUpdate.init();
 
 /* ---------- boot ---------- */
 if (!S.readiness.date) S.readiness.date = today();

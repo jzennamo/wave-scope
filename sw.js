@@ -1,12 +1,12 @@
 /* Wave Scope service worker — offline shell so the gym's dead spot doesn't matter. */
-const VERSION = 'wave-scope-v4';
+const VERSION = 'wave-scope-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(VERSION)
       // one bad URL must not sink the whole install
-      .then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null))))
+      .then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => null))))
       .then(() => self.skipWaiting())
   );
 });
@@ -27,6 +27,8 @@ self.addEventListener('fetch', e => {
   try { url = new URL(req.url); } catch (err) { return; }
   // Hevy API traffic (and anything else off-origin) goes straight to the network, never cached
   if (url.origin !== self.location.origin) return;
+  // update checks read the live sw.js; never answer them from the cache
+  if (url.pathname.endsWith('/sw.js')) return;
 
   // The page itself: network first, so a redeploy lands as soon as you have signal.
   if (req.mode === 'navigate') {
