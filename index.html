@@ -574,6 +574,41 @@ function lastSetRpe(e) {
   if (rated.length) return Math.max.apply(null, rated);
   return (e && e.rpe != null && e.rpe !== '') ? +e.rpe : null;
 }
+// RPE at a target rep count. Every rep past the target was a rep in reserve there, so 20 reps at
+// RPE 9 on a 12-rep target is about RPE 1 at 12. With no rating, only a clear overshoot counts:
+// `unratedMin` extra reps or more are scored as if the set had gone to failure (RPE 10).
+function rpeAtTarget(e, target, unratedMin) {
+  const sets = entrySets(e);
+  const last = sets[sets.length - 1];
+  const extra = last && target ? Math.max(0, +last.r - target) : 0;
+  const rpe = lastSetRpe(e);
+  if (rpe != null) return { rpe: rpe - extra, logged: rpe, extra: extra, reps: last ? +last.r : null };
+  if (extra >= (unratedMin || 2)) return { rpe: 10 - extra, logged: null, extra: extra, reps: +last.r };
+  return { rpe: null, logged: null, extra: extra, reps: last ? +last.r : null };
+}
+// What a set was worth at another weight, in reps, on the TM guard's yardstick (plain Epley, reps
+// capped at 10, a single counts as its own weight). 355x4 with 335 prescribed is worth about 6 reps
+// at 335. A heavier set is never worth fewer reps than it got, a lighter one never more.
+function repsAt(w, reps, atW) {
+  w = +w; reps = +reps; atW = +atW;
+  if (!(w > 0) || !(atW > 0) || !(reps >= 1) || Math.abs(w - atW) < 0.5) return reps;
+  const eq = Math.max(0, 30 * (strengthE1rm(w, reps) / atW - 1));
+  return w > atW ? Math.max(reps, eq) : Math.min(reps, eq);
+}
+// The set that best shows what a main lift did at the prescribed weight: the most reps-equivalent at
+// `pw` across every working set logged, so a heavy single tacked on after the AMRAP can't stand in for it.
+function bestAtPrescribed(e) {
+  const pw = +e.pw;
+  const sets = entrySets(e).filter(x => +x.r >= 1 && +x.w > 0);
+  if (!(pw > 0) || !sets.length) return { w: +e.weight, r: +e.reps, eff: +e.reps, moved: false };
+  let best = null;
+  for (const x of sets) {
+    const eff = repsAt(x.w, x.r, pw);
+    if (!best || eff > best.eff) best = { w: +x.w, r: +x.r, eff: eff, rpe: x.rpe == null || x.rpe === '' ? null : +x.rpe };
+  }
+  best.moved = Math.abs(best.w - pw) >= 0.5;
+  return best;
+}
 const RECENT_DAYS = 42;     // "recent" = the last six weeks
 function recentE1rm(name, days) {
   const base = String(name).split(' — ')[0];
@@ -610,11 +645,15 @@ function fatigueMult(name, targetRpe) {
   const days = (Date.parse(today() + 'T00:00:00') - Date.parse(p.date + 'T00:00:00')) / 864e5;
   if (!(days >= 0 && days <= 21)) return { m: 1, why: [] };
   let m = 1; const why = [];
+  // what the last top set was worth at the weight that was prescribed (a heavier set with fewer reps isn't fatigue)
+  const got = p.expected != null ? bestAtPrescribed(p).eff : +p.reps;
   if (p.rpe != null && p.rpe !== '') {
-    const d = +p.rpe - (targetRpe == null ? 8 : targetRpe);
-    if (d > 0.25) { m *= clamp(1 - 0.02 * d, 0.94, 1); why.push('last set RPE ' + p.rpe + ' vs ' + targetRpe + ' target'); }
+    // an AMRAP that beat its target ends at a high RPE by design; judge it at the target reps
+    const extra = p.expected != null ? Math.max(0, Math.round(got) - +p.expected) : 0;
+    const d = (+p.rpe - extra) - (targetRpe == null ? 8 : targetRpe);
+    if (d > 0.25) { m *= clamp(1 - 0.02 * d, 0.94, 1); why.push('last set RPE ' + p.rpe + (extra ? ' with ' + extra + ' past target' : '') + ' vs ' + targetRpe + ' target'); }
   }
-  if (p.expected != null && p.reps < p.expected) {
+  if (p.expected != null && Math.round(got) < p.expected) {
     m *= 0.98; why.push('missed the rep target last time');
   }
   return { m: clamp(m, 0.92, 1), why: why };
@@ -661,18 +700,25 @@ function accessoryPlan(ex) {
   const inc = ex.increment || (S.settings.units === 'kg' ? 2.5 : 5);
   const sets = Array.isArray(p.sets) && p.sets.length ? p.sets : null;
   const need = +ex.sets || 3;
-  const rpe = lastSetRpe(p);
+  // judged at the top of the range: an AMRAP last set of 20 on a 10-12 range is a light weight, not a hard one
+  const at = rpeAtTarget(p, top, 2);
+  const lastTxt = at.extra ? 'the last went to ' + at.reps + (at.logged != null ? ' @ RPE ' + at.logged : '')
+    + ' (about RPE ' + Math.max(1, at.rpe) + ' at ' + top + ')' : 'the last at RPE ' + at.rpe;
+  const mixed = sets && sets.some(x => x.w != null && Math.abs(+x.w - w) >= 0.5);
   if (!sets) {
     why.push('holding — the last log only has one set on record; the next jump needs all of them');
+  } else if (mixed) {
+    // changed the weight partway through (in Hevy): carry the heavier weight, all sets there before the next jump
+    why.push('last time ' + sets.map(x => fmtW(x.w) + '×' + x.r).join(', ') + ' — every set at ' + fmtW(w) + ' before the next jump');
   } else if (sets.length < need || sets.some(x => +x.r < top)) {
     why.push('holding — last time ' + sets.map(x => x.r).join('/') + '; every set needs ' + top);
-  } else if (rpe == null) {
+  } else if (at.rpe == null) {
     why.push('holding — every set hit ' + top + '; log the last set\'s RPE to unlock +' + fmtW(inc));
-  } else if (rpe > 8) {
-    why.push('holding — every set hit ' + top + ' but the last was RPE ' + rpe + ' (needs 8 or less)');
+  } else if (at.rpe > 8) {
+    why.push('holding — every set hit ' + top + ' but ' + lastTxt + ' (needs 8 or less at ' + top + ')');
   } else {
     w = roundW(w + inc);
-    why.push('every set hit ' + top + ', last at RPE ' + rpe + ' → +' + fmtW(inc));
+    why.push('every set hit ' + top + ', ' + lastTxt + ' → +' + fmtW(inc));
   }
   return { weight: w, why: why };
 }
@@ -690,12 +736,13 @@ function rpeBandBlock(ex, label, schemeName, scheme, lowDay, step) {
   const why = [n + '×' + c.reps + ' @ RPE ' + c.low + '–' + c.high
     + (Array.isArray(c.sets) && n < Math.max.apply(null, c.sets) ? ' (one set fewer in the heavy week)' : '')];
   const p = lastPerf(ex.name);
-  let w;
+  let w, d = 0;
   if (p && p.weight) {
     const done = entrySets(p);
     const short = done.some(x => +x.r < c.reps);
-    const r = lastSetRpe(p);
-    let d = 0;
+    // RPE at the prescribed reps: 290x8 @ 9 on a 4-rep target is about RPE 5 at 4
+    const at = rpeAtTarget(p, c.reps, 3);
+    const r = at.rpe;
     if (short) d = -1;
     else if (r == null) d = 0;
     else if (r <= 6) d = 2;
@@ -704,16 +751,21 @@ function rpeBandBlock(ex, label, schemeName, scheme, lowDay, step) {
     else if (r < 9.5) d = -1;
     else d = -2;
     w = +p.weight + d * inc;
-    why.push('last time ' + fmtW(p.weight) + ' ' + (short ? 'fell short of ' + c.reps : (r == null ? 'with no RPE logged' : '@ RPE ' + r))
+    why.push('last time ' + fmtW(p.weight) + ' ' + (short ? 'fell short of ' + c.reps
+      : at.extra ? '× ' + at.reps + (at.logged != null ? ' @ RPE ' + at.logged : '') + (r == null ? ' with no RPE logged' : ' (about RPE ' + Math.max(1, r) + ' at ' + c.reps + ')')
+      : (r == null ? 'with no RPE logged' : '@ RPE ' + r))
       + (d ? ' → ' + (d > 0 ? '+' : '−') + fmtW(Math.abs(d) * inc) : ' → same weight'));
   } else {
     w = tm * c.start;
     why.push('first session: ' + Math.round(c.start * 100) + '% of TM ' + fmtW(tm));
   }
   const lo = roundW(tm * c.floor), hi = roundW(tm * c.ceil);
+  // above the band because you put it there in Hevy, and it went fine: keep your weight (it won't climb past it on its own)
+  const top = (p && +p.weight > hi && d >= 0) ? roundW(+p.weight) : hi;
   const raw = roundW(w);
-  w = clamp(raw, lo, hi);
-  if (w !== raw) why.push('kept inside ' + Math.round(c.floor * 100) + '–' + Math.round(c.ceil * 100) + '% of TM');
+  w = clamp(raw, lo, top);
+  if (top > hi) why.push('above the usual ' + Math.round(c.ceil * 100) + '% of TM because you lifted it last time and it went fine');
+  else if (w !== raw) why.push('kept inside ' + Math.round(c.floor * 100) + '–' + Math.round(c.ceil * 100) + '% of TM');
   if (lowDay) { w = roundW(w - inc); why.push('readiness low → one step lighter'); }
   why.push('first set off by more than a step? adjust ±' + fmtW(inc) + ' on the spot');
   const sets = [];
@@ -855,20 +907,24 @@ function buildDay(dayId, step, rd) {
    above the guard. Hit it exactly: hold. Miss: straight back to the guard (today's set counts)
    and at least 5% off. Before v6 every AMRAP could add up to two increments, which is how the
    sumo TM ran 385 -> 400 -> 425 while the AMRAP itself stayed flat. */
-function tmVerdict(exName, reps, rpe, expected, weight) {
+function tmVerdict(exName, reps, rpe, expected, weight, pw) {
   const ex = findExercise(exName);
   if (!ex || expected == null || reps == null) return null;
   const inc = tmIncrement(ex);
-  const surplus = +reps - +expected;
-  if (surplus >= 1) return { delta: inc, why: '+' + surplus + ' over target' };
+  // lifted a different weight than prescribed (changed in Hevy): judge it by what it was worth at the prescribed weight
+  const moved = +pw > 0 && +weight > 0 && Math.abs(+weight - +pw) >= 0.5;
+  const eff = moved ? Math.round(repsAt(weight, reps, pw)) : +reps;
+  const note = moved ? fmtW(weight) + '×' + reps + ' ≈ ' + eff + ' at ' + fmtW(pw) + ': ' : '';
+  const surplus = eff - +expected;
+  if (surplus >= 1) return { delta: inc, why: note + '+' + surplus + ' over target' };
   if (surplus === 0) {
-    if (rpe !== '' && rpe != null && +rpe >= 10) return { delta: 0, why: 'target hit but it was a grinder — holding' };
-    return { delta: 0, why: 'hit target exactly — holding' };
+    if (rpe !== '' && rpe != null && +rpe >= 10) return { delta: 0, why: note + 'target hit but it was a grinder — holding' };
+    return { delta: 0, why: note + 'hit target exactly — holding' };
   }
   const g = tmCap(exName);
   const fivePct = Math.floor(+ex.tm * 0.95 / inc) * inc;
   const reset = g ? Math.min(g.cap, fivePct) : fivePct;
-  return { delta: null, reset: reset, why: 'missed by ' + (-surplus) + ' — TM back to ' + fmtW(reset) };
+  return { delta: null, reset: reset, why: note + 'missed by ' + (-surplus) + ' — TM back to ' + fmtW(reset) };
 }
 // one increment per cycle, never past the guard; reports what happened
 function raiseTm(name, delta) {
@@ -1629,7 +1685,8 @@ function renderLog() {
     const top = b.sets.slice().reverse().find(s => !s.warm && !s.joker) || {};
     const expected = b.sets.filter(s => s.top)[0];
     rows.push('<div class="logrow" data-name="' + esc(b.name) + '"' + (expected ? ' data-expected="' + expected.expected + '"' : '')
-      + (b.tag === 'main' ? ' data-main="1"' : '') + (b.tag === 'test' ? ' data-test="1"' : '') + '>' +
+      + (b.tag === 'main' ? ' data-main="1"' : '') + (b.tag === 'test' ? ' data-test="1"' : '')
+      + (expected && expected.weight != null ? ' data-pw="' + expected.weight + '"' : '') + '>' +
       '<span class="lbl">' + esc(b.label.split(' (')[0]) + (expected ? ' <span class="dim">' + expected.expected + '+</span>' : '') + '</span>' +
       '<input class="lw" type="number" inputmode="decimal" step="any" value="' + (top.weight == null ? '' : fmtW(top.weight)) + '">' +
       '<input class="lr" type="text" inputmode="decimal" autocomplete="off" placeholder="' + esc(String(top.reps || '')) + '">' +
@@ -1979,6 +2036,7 @@ $('#saveSession').onclick = () => {
       expected: row.dataset.expected ? +row.dataset.expected : null,
       main: row.dataset.main === '1' || undefined,
       test: row.dataset.test === '1' || undefined,
+      pw: row.dataset.pw ? +row.dataset.pw : undefined,     // what the app prescribed, to judge a changed weight against
       sets: sets
     });
   });
@@ -1999,7 +2057,8 @@ $('#saveSession').onclick = () => {
   } else {
     for (const e of entries) {
       if (e.expected == null) continue;
-      const v = tmVerdict(e.name, e.reps, e.rpe, e.expected, e.weight);
+      const best = bestAtPrescribed(e);
+      const v = tmVerdict(e.name, best.r, best.rpe !== undefined ? best.rpe : e.rpe, e.expected, best.w, e.pw);
       if (!v) continue;
       e.verdict = v.why;
       const short = e.name.split(' (')[0];
@@ -2221,7 +2280,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
    the Updates section compares this page's version with the live sw.js. Updating
    clears the offline cache and reloads; saved data (localStorage, IndexedDB) is
    not touched. */
-const APP_VERSION = 'wave-scope-v6';
+const APP_VERSION = 'wave-scope-v7';
 const AppUpdate = (() => {
   const el = id => document.getElementById(id);
   let latest = null, lastCheck = 0;
